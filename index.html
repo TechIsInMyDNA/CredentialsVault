@@ -3,50 +3,50 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>OmniVault - Excel Dynamic Matrix</title>
+  <title>OmniVault - Family & Entity Dynamic Manager</title>
   <style>
     :root {
-      --bg: #0b0f19;
-      --card: #141d2e;
-      --cell-bg: #090e17;
-      --border: #233148;
+      --bg: #080c14;
+      --card: #111927;
+      --sub-card: #0c121d;
+      --border: #1e293b;
       --primary: #38bdf8;
       --primary-hover: #0284c7;
-      --accent: #818cf8;
+      --accent: #a855f7;
       --text: #f8fafc;
       --muted: #94a3b8;
       --danger: #ef4444;
       --success: #10b981;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace, sans-serif; }
-    body { background: var(--bg); color: var(--text); padding: 14px; min-height: 100vh; }
-    .container { width: 100%; max-width: 1200px; margin: 0 auto; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 14px; min-height: 100vh; display: flex; justify-content: center; }
+    .container { width: 100%; max-width: 820px; }
 
     .card {
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: 12px;
       padding: 16px;
       margin-bottom: 14px;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
     }
 
-    h1 { font-size: 1.25rem; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+    h1 { font-size: 1.25rem; color: var(--primary); display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
     p { font-size: 0.85rem; color: var(--muted); margin-bottom: 12px; }
 
-    label { font-size: 0.75rem; font-weight: bold; color: var(--muted); display: block; margin-bottom: 4px; text-transform: uppercase; }
-    input {
+    label { font-size: 0.75rem; font-weight: 700; color: var(--muted); display: block; margin-bottom: 4px; text-transform: uppercase; }
+    input, textarea {
       width: 100%;
-      padding: 8px 12px;
-      background: var(--cell-bg);
+      padding: 9px 12px;
+      background: #06090f;
       border: 1px solid var(--border);
       border-radius: 6px;
       color: #fff;
       font-size: 0.9rem;
       margin-bottom: 10px;
     }
-    input:focus { outline: none; border-color: var(--primary); }
+    input:focus, textarea:focus { outline: none; border-color: var(--primary); }
 
     .btn-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     button {
@@ -64,74 +64,81 @@
     }
     button:hover { background: var(--primary-hover); }
     button.secondary { background: #1e293b; color: #cbd5e1; border: 1px solid var(--border); }
+    button.secondary:hover { background: #334155; }
     button.danger { background: var(--danger); color: #fff; }
+    button.accent { background: var(--accent); color: #fff; }
     button.sm { padding: 4px 8px; font-size: 0.75rem; }
 
-    /* EXCEL MATRIX SHEET STYLES */
-    .sheet-wrapper {
-      overflow-x: auto;
+    /* PERSON SECTION (LEVEL 1) */
+    .person-card {
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 8px;
-      margin-top: 10px;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .person-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+    }
+    .person-name {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
-    table.excel-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.85rem;
-      min-width: 800px;
-    }
-
-    table.excel-table th, table.excel-table td {
+    /* ACCOUNT / SERVICE BOX (LEVEL 2) */
+    .service-box {
+      background: var(--sub-card);
       border: 1px solid var(--border);
-      padding: 6px 10px;
-      vertical-align: middle;
+      border-radius: 9px;
+      padding: 12px;
+      margin-bottom: 10px;
     }
-
-    table.excel-table th {
-      background: #0f172a;
-      color: var(--primary);
-      font-weight: 700;
-      text-align: left;
-      position: sticky;
-      top: 0;
-      white-space: nowrap;
+    .service-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      padding-bottom: 6px;
     }
+    .service-title { font-size: 0.95rem; font-weight: 700; color: var(--primary); }
 
-    /* Editable cell look */
-    .cell-input {
-      width: 100%;
-      background: transparent;
-      border: none;
-      color: var(--text);
+    /* DYNAMIC FIELDS (LEVEL 3) */
+    .fields-list { display: flex; flex-direction: column; gap: 5px; }
+    .data-row {
+      display: flex;
+      justify-content: space-between;
       font-size: 0.85rem;
-      padding: 4px;
-      margin-bottom: 0;
-      border-radius: 4px;
+      padding: 5px 8px;
+      border-radius: 5px;
+      background: rgba(255,255,255,0.02);
     }
-    .cell-input:focus {
-      background: #020712;
-      box-shadow: inset 0 0 0 1px var(--primary);
-    }
+    .data-label { color: var(--muted); font-weight: 600; }
+    .data-value-group { display: flex; align-items: center; gap: 8px; max-width: 65%; word-break: break-all; text-align: right; }
+    .copy-btn { color: var(--primary); cursor: pointer; font-size: 0.78rem; }
+    .copy-btn:hover { text-decoration: underline; }
 
-    .cell-masked {
-      font-family: monospace;
-      letter-spacing: 2px;
+    /* MODAL DYNAMIC ROW */
+    .field-pair {
+      display: grid;
+      grid-template-columns: 1fr 1.3fr auto;
+      gap: 8px;
+      margin-bottom: 8px;
+      align-items: center;
     }
+    .field-pair input { margin-bottom: 0; }
 
-    .status-badge { font-size: 0.75rem; color: var(--success); font-weight: bold; }
+    .status-badge { font-size: 0.75rem; color: var(--success); font-weight: 700; }
     .hidden { display: none !important; }
-    
-    .quick-tag {
-      font-size: 0.7rem;
-      padding: 2px 6px;
-      border-radius: 4px;
-      background: #1e293b;
-      color: var(--muted);
-      cursor: pointer;
-    }
-    .quick-tag:hover { color: var(--primary); }
   </style>
 
   <script type="module">
@@ -155,17 +162,16 @@
     const db = getFirestore(app);
 
     let currentUser = null;
-    let cloudPayload = null;
-    let masterKey = null;
+    let cloudRawPayload = null;
+    let masterCryptoKey = null;
+    let vaultData = []; // Array of Person records
+    let editingPersonIndex = null;
+    let editingItemIndex = null;
 
-    // Excel Grid Data Structure
-    let vaultColumns = ["Item / Purpose", "Identifier / User", "Secret / Password", "Extra Info / Notes"];
-    let vaultRows = [];
-
-    // Cryptography (PBKDF2 + AES-GCM 256)
-    async function deriveKey(pass, salt) {
+    // --- CRYPTO (AES-256-GCM + PBKDF2) ---
+    async function deriveKey(passphrase, salt) {
       const enc = new TextEncoder();
-      const baseKey = await crypto.subtle.importKey("raw", enc.encode(pass), { name: "PBKDF2" }, false, ["deriveKey"]);
+      const baseKey = await crypto.subtle.importKey("raw", enc.encode(passphrase), { name: "PBKDF2" }, false, ["deriveKey"]);
       return crypto.subtle.deriveKey(
         { name: "PBKDF2", salt, iterations: 100000, hash: "SHA-256" },
         baseKey,
@@ -175,254 +181,346 @@
       );
     }
 
-    async function encryptData(data, key) {
+    async function encryptPayload(dataObj, key) {
       const iv = crypto.getRandomValues(new Uint8Array(12));
       const enc = new TextEncoder();
-      const cipher = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, enc.encode(JSON.stringify(data)));
+      const cipher = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, enc.encode(JSON.stringify(dataObj)));
       return { iv: Array.from(iv), cipher: Array.from(new Uint8Array(cipher)) };
     }
 
-    async function decryptData(cipherArr, ivArr, key) {
-      const iv = new Uint8Array(ivArr);
-      const cipher = new Uint8Array(cipherArr);
-      const dec = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, cipher);
-      return JSON.parse(new TextDecoder().decode(dec));
+    async function decryptPayload(cipherArray, ivArray, key) {
+      const iv = new Uint8Array(ivArray);
+      const cipher = new Uint8Array(cipherArray);
+      const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, cipher);
+      return JSON.parse(new TextDecoder().decode(decrypted));
     }
 
-    // Auth Observer
+    // --- AUTH OBSERVER ---
     onAuthStateChanged(auth, (user) => {
       currentUser = user;
       if (user) {
-        document.getElementById("authBox").classList.add("hidden");
-        document.getElementById("masterBox").classList.remove("hidden");
-        listenCloud(user.uid);
+        document.getElementById("viewAuth").classList.add("hidden");
+        document.getElementById("viewMasterKey").classList.remove("hidden");
+        listenToFirestore(user.uid);
       } else {
-        document.getElementById("authBox").classList.remove("hidden");
-        document.getElementById("masterBox").classList.add("hidden");
-        document.getElementById("gridBox").classList.add("hidden");
+        document.getElementById("viewAuth").classList.remove("hidden");
+        document.getElementById("viewMasterKey").classList.add("hidden");
+        document.getElementById("viewVault").classList.add("hidden");
       }
     });
 
-    function listenCloud(uid) {
-      const ref = doc(db, "vaults", uid);
-      onSnapshot(ref, async (snap) => {
+    function listenToFirestore(uid) {
+      const docRef = doc(db, "vaults", uid);
+      onSnapshot(docRef, async (snap) => {
         if (snap.exists()) {
-          cloudPayload = snap.data();
-          if (masterKey) {
+          cloudRawPayload = snap.data();
+          if (masterCryptoKey) {
             try {
-              const res = await decryptData(cloudPayload.cipher, cloudPayload.iv, masterKey);
-              vaultColumns = res.columns || vaultColumns;
-              vaultRows = res.rows || [];
-              renderGrid();
+              vaultData = await decryptPayload(cloudRawPayload.cipher, cloudRawPayload.iv, masterCryptoKey);
+              renderVault();
             } catch(e) {
-              console.error("Sync error", e);
+              console.error("Auto-sync decrypt failed", e);
             }
           }
         } else {
-          cloudPayload = null;
+          cloudRawPayload = null;
+          if (masterCryptoKey) {
+            vaultData = [];
+            renderVault();
+          }
         }
       });
     }
 
-    window.signIn = async () => {
-      const e = document.getElementById("uEmail").value.trim();
-      const p = document.getElementById("uPass").value.trim();
+    window.handleLogin = async () => {
+      const email = document.getElementById("loginEmail").value.trim();
+      const pass = document.getElementById("loginPass").value.trim();
       try {
-        await signInWithEmailAndPassword(auth, e, p);
-      } catch(err) { alert(err.message); }
+        await signInWithEmailAndPassword(auth, email, pass);
+      } catch (err) { alert("Login Error: " + err.message); }
     };
 
-    window.unlockSheet = async () => {
-      const pass = document.getElementById("masterKey").value.trim();
-      if (!pass) return alert("Master password daalein!");
+    window.unlockVault = async () => {
+      const masterPass = document.getElementById("masterPassInput").value.trim();
+      if (!masterPass) return alert("Master Passphrase daalein!");
 
       try {
         let salt;
-        if (cloudPayload && Array.isArray(cloudPayload.salt) && cloudPayload.salt.length === 16) {
-          salt = new Uint8Array(cloudPayload.salt);
+        if (cloudRawPayload && Array.isArray(cloudRawPayload.salt) && cloudRawPayload.salt.length === 16) {
+          salt = new Uint8Array(cloudRawPayload.salt);
         } else {
           salt = crypto.getRandomValues(new Uint8Array(16));
         }
 
-        const derived = await deriveKey(pass, salt);
+        const derived = await deriveKey(masterPass, salt);
 
-        if (cloudPayload && cloudPayload.cipher) {
+        if (cloudRawPayload && cloudRawPayload.cipher) {
           try {
-            const res = await decryptData(cloudPayload.cipher, cloudPayload.iv, derived);
-            vaultColumns = res.columns || vaultColumns;
-            vaultRows = res.rows || [];
+            vaultData = await decryptPayload(cloudRawPayload.cipher, cloudRawPayload.iv, derived);
           } catch(err) {
-            alert("Galat Master Key!");
+            alert("Galat Master Key! Decryption fail ho gaya.");
             return;
           }
         } else {
-          vaultRows = [];
+          vaultData = [];
         }
 
-        masterKey = derived;
-        document.getElementById("masterBox").classList.add("hidden");
-        document.getElementById("gridBox").classList.remove("hidden");
-        document.getElementById("masterKey").value = "";
-        renderGrid();
-      } catch(err) {
-        alert("Unlock failed: " + err.message);
+        masterCryptoKey = derived;
+        document.getElementById("viewMasterKey").classList.add("hidden");
+        document.getElementById("viewVault").classList.remove("hidden");
+        document.getElementById("masterPassInput").value = "";
+        renderVault();
+      } catch (e) {
+        alert("Unlock Error: " + e.message);
       }
     };
 
-    // EXCEL GRID LOGIC
-    window.renderGrid = () => {
-      const thead = document.getElementById("gridHead");
-      const tbody = document.getElementById("gridBody");
-      const filter = (document.getElementById("searchBar").value || "").toLowerCase().trim();
-
-      // Render Headers
-      let hHtml = `<tr><th style="width:50px; text-align:center;">#</th>`;
-      vaultColumns.forEach((col, idx) => {
-        hHtml += `
-          <th>
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span contenteditable="true" onblur="renameColumn(${idx}, this.innerText)">${escapeHtml(col)}</span>
-              ${idx > 1 ? `<span class="quick-tag" onclick="removeColumn(${idx})">✕</span>` : ''}
-            </div>
-          </th>`;
-      });
-      hHtml += `<th style="width:80px; text-align:center;">Action</th></tr>`;
-      thead.innerHTML = hHtml;
-
-      // Filter Rows
-      const filtered = vaultRows.map((r, i) => ({ ...r, originalIndex: i })).filter(row => {
-        if (!filter) return true;
-        return (row.cells || []).some(c => (c.val || "").toLowerCase().includes(filter));
-      });
-
-      if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="${vaultColumns.length + 2}" style="text-align:center; padding:20px; color:var(--muted);">Koi record nahi mila. Niche "+ Add Row" karein.</td></tr>`;
-        return;
-      }
-
-      // Render Rows
-      let bHtml = "";
-      filtered.forEach((row, rowIdx) => {
-        bHtml += `<tr><td style="text-align:center; color:var(--muted);">${rowIdx + 1}</td>`;
-        vaultColumns.forEach((_, colIdx) => {
-          const cell = (row.cells && row.cells[colIdx]) ? row.cells[colIdx] : { val: "", secret: false };
-          const isSecret = cell.secret && !cell.revealed;
-          bHtml += `
-            <td>
-              <div style="display:flex; align-items:center; gap:6px;">
-                <input type="${isSecret ? 'password' : 'text'}" 
-                  class="cell-input ${isSecret ? 'cell-masked' : ''}" 
-                  value="${escapeQuotes(cell.val || '')}" 
-                  onchange="updateCell(${row.originalIndex}, ${colIdx}, this.value)" 
-                  placeholder="Empty..." />
-                <span class="quick-tag" onclick="toggleCellSecret(${row.originalIndex}, ${colIdx})" title="Toggle Mask">${cell.secret ? '🔒' : '🔓'}</span>
-                <span class="quick-tag" onclick="copyValue('${escapeQuotes(cell.val || '')}')" title="Copy">📋</span>
-              </div>
-            </td>`;
-        });
-        bHtml += `
-          <td style="text-align:center;">
-            <button class="danger sm" onclick="deleteRow(${row.originalIndex})">Delete</button>
-          </td>
-        </tr>`;
-      });
-
-      tbody.innerHTML = bHtml;
-    };
-
-    window.addRow = async () => {
-      const newCells = vaultColumns.map((col, idx) => ({
-        val: "",
-        secret: (idx === 2) // Default 3rd column secret
-      }));
-      vaultRows.unshift({ id: Date.now(), cells: newCells });
-      await syncCloud();
-      renderGrid();
-    };
-
-    window.addColumn = async () => {
-      const name = prompt("Naye Cell/Column ka naam likhein:", "Extra Detail");
-      if (!name) return;
-      vaultColumns.push(name.trim());
-      vaultRows.forEach(row => {
-        if (!row.cells) row.cells = [];
-        row.cells.push({ val: "", secret: false });
+    // --- PERSON ACTIONS (LEVEL 1) ---
+    window.addNewPerson = async () => {
+      const name = prompt("Kiska naam add karna hai? (e.g. Mera, Pappa, Mummy, Medical Store):");
+      if (!name || !name.trim()) return;
+      vaultData.unshift({
+        id: Date.now(),
+        personName: name.trim(),
+        items: []
       });
       await syncCloud();
-      renderGrid();
+      renderVault();
     };
 
-    window.renameColumn = async (colIdx, newName) => {
-      if (!newName.trim()) return;
-      vaultColumns[colIdx] = newName.trim();
-      await syncCloud();
-    };
-
-    window.removeColumn = async (colIdx) => {
-      if (confirm(`Column "${vaultColumns[colIdx]}" delete karna hai? Iska saara data hatt jayega.`)) {
-        vaultColumns.splice(colIdx, 1);
-        vaultRows.forEach(row => {
-          if (row.cells) row.cells.splice(colIdx, 1);
-        });
+    window.deletePerson = async (pIdx) => {
+      if (confirm(`Kya aap "${vaultData[pIdx].personName}" aur unka saara data delete karna chahte hain?`)) {
+        vaultData.splice(pIdx, 1);
         await syncCloud();
-        renderGrid();
+        renderVault();
       }
     };
 
-    window.updateCell = async (rIdx, cIdx, val) => {
-      if (!vaultRows[rIdx].cells) vaultRows[rIdx].cells = [];
-      if (!vaultRows[rIdx].cells[cIdx]) vaultRows[rIdx].cells[cIdx] = { val: "", secret: false };
-      vaultRows[rIdx].cells[cIdx].val = val;
-      await syncCloud();
+    // --- ITEM ACTIONS (LEVEL 2) ---
+    window.openAddItemModal = (pIdx) => {
+      editingPersonIndex = pIdx;
+      editingItemIndex = null;
+
+      document.getElementById("itemModalTitle").textContent = `Add in ${vaultData[pIdx].personName}`;
+      document.getElementById("serviceTitleInput").value = "";
+      document.getElementById("serviceNotesInput").value = "";
+      document.getElementById("dynamicFieldsBox").innerHTML = "";
+
+      // Default empty field
+      window.addDynamicFieldRow("", "");
+
+      document.getElementById("itemModal").classList.remove("hidden");
+      document.getElementById("itemModal").scrollIntoView({ behavior: 'smooth' });
     };
 
-    window.toggleCellSecret = async (rIdx, cIdx) => {
-      const c = vaultRows[rIdx].cells[cIdx];
-      c.secret = !c.secret;
-      await syncCloud();
-      renderGrid();
+    window.editItem = (pIdx, iIdx) => {
+      editingPersonIndex = pIdx;
+      editingItemIndex = iIdx;
+
+      const item = vaultData[pIdx].items[iIdx];
+      document.getElementById("itemModalTitle").textContent = `Edit in ${vaultData[pIdx].personName}`;
+      document.getElementById("serviceTitleInput").value = item.title || "";
+      document.getElementById("serviceNotesInput").value = item.notes || "";
+
+      const box = document.getElementById("dynamicFieldsBox");
+      box.innerHTML = "";
+      (item.fields || []).forEach(f => {
+        window.addDynamicFieldRow(f.key, f.val, f.isSecret);
+      });
+
+      document.getElementById("itemModal").classList.remove("hidden");
+      document.getElementById("itemModal").scrollIntoView({ behavior: 'smooth' });
     };
 
-    window.deleteRow = async (rIdx) => {
-      if (confirm("Row delete karni hai?")) {
-        vaultRows.splice(rIdx, 1);
+    window.deleteItem = async (pIdx, iIdx) => {
+      if (confirm("Ise delete karna hai?")) {
+        vaultData[pIdx].items.splice(iIdx, 1);
         await syncCloud();
-        renderGrid();
+        renderVault();
       }
+    };
+
+    window.closeItemModal = () => {
+      document.getElementById("itemModal").classList.add("hidden");
+    };
+
+    window.addDynamicFieldRow = (k = "", v = "", isSecret = false) => {
+      const container = document.getElementById("dynamicFieldsBox");
+      const row = document.createElement("div");
+      row.className = "field-pair";
+      row.innerHTML = `
+        <input type="text" placeholder="Detail Label (Card No, Policy No, PIN, Expiry)" value="${escapeQuotes(k)}" class="f-key" />
+        <input type="${isSecret ? 'password' : 'text'}" placeholder="Value / Secret" value="${escapeQuotes(v)}" class="f-val" />
+        <button type="button" class="danger sm" onclick="this.parentElement.remove()">✕</button>
+      `;
+      container.appendChild(row);
+    };
+
+    window.saveItem = async () => {
+      const title = document.getElementById("serviceTitleInput").value.trim();
+      const notes = document.getElementById("serviceNotesInput").value.trim();
+
+      if (!title) return alert("Account / Service ka title daalein!");
+
+      const fieldPairs = [];
+      const keys = document.querySelectorAll(".f-key");
+      const vals = document.querySelectorAll(".f-val");
+
+      for (let i = 0; i < keys.length; i++) {
+        const k = keys[i].value.trim();
+        const v = vals[i].value.trim();
+        if (k || v) {
+          fieldPairs.push({
+            key: k || "Detail",
+            val: v,
+            isSecret: vals[i].type === "password"
+          });
+        }
+      }
+
+      const itemObj = {
+        id: editingItemIndex !== null ? vaultData[editingPersonIndex].items[editingItemIndex].id : Date.now(),
+        title,
+        notes,
+        fields: fieldPairs
+      };
+
+      if (editingItemIndex !== null) {
+        vaultData[editingPersonIndex].items[editingItemIndex] = itemObj;
+      } else {
+        vaultData[editingPersonIndex].items.unshift(itemObj);
+      }
+
+      await syncCloud();
+      window.closeItemModal();
+      renderVault();
     };
 
     async function syncCloud() {
-      if (!currentUser || !masterKey) return;
-      const dataToSave = { columns: vaultColumns, rows: vaultRows };
-      const encrypted = await encryptData(dataToSave, masterKey);
+      if (!currentUser || !masterCryptoKey) return;
+      const encrypted = await encryptPayload(vaultData, masterCryptoKey);
 
-      let saltArr = (cloudPayload && cloudPayload.salt) 
-        ? cloudPayload.salt 
+      let saltArr = (cloudRawPayload && cloudRawPayload.salt) 
+        ? cloudRawPayload.salt 
         : Array.from(crypto.getRandomValues(new Uint8Array(16)));
 
       await setDoc(doc(db, "vaults", currentUser.uid), {
         iv: encrypted.iv,
         cipher: encrypted.cipher,
         salt: saltArr,
-        lastUpdated: new Date().toISOString()
+        lastModified: new Date().toISOString()
       });
     }
 
+    // --- RENDER & UNIVERSAL SEARCH ---
+    window.renderVault = () => {
+      const container = document.getElementById("vaultList");
+      const query = (document.getElementById("searchQuery").value || "").trim().toLowerCase();
+      container.innerHTML = "";
+
+      if (vaultData.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">Vault khali hai. Upar "+ Add Person / Entity" dabakar start karein.</div>`;
+        return;
+      }
+
+      let hasMatch = false;
+
+      vaultData.forEach((person, pIdx) => {
+        // Check match on Person name
+        const matchPerson = person.personName.toLowerCase().includes(query);
+
+        // Filter items under this person
+        const matchingItems = (person.items || []).filter(item => {
+          if (!query || matchPerson) return true;
+          if (item.title.toLowerCase().includes(query)) return true;
+          if (item.notes && item.notes.toLowerCase().includes(query)) return true;
+          return (item.fields || []).some(f => 
+            f.key.toLowerCase().includes(query) || f.val.toLowerCase().includes(query)
+          );
+        });
+
+        if (query && !matchPerson && matchingItems.length === 0) {
+          return;
+        }
+
+        hasMatch = true;
+        const pCard = document.createElement("div");
+        pCard.className = "person-card";
+
+        let itemsHtml = "";
+        matchingItems.forEach((item, itemActualIdx) => {
+          // Find actual index in original array
+          const realIdx = person.items.findIndex(i => i.id === item.id);
+
+          let fieldsHtml = "";
+          (item.fields || []).forEach((f, fIdx) => {
+            const fid = `f_${item.id}_${fIdx}`;
+            const isHidden = f.isSecret;
+            fieldsHtml += `
+              <div class="data-row">
+                <span class="data-label">${escapeHtml(f.key)}:</span>
+                <div class="data-value-group">
+                  <span id="${fid}">${isHidden ? '••••••••' : escapeHtml(f.val)}</span>
+                  ${isHidden ? `<span class="copy-btn" onclick="toggleFieldMask('${fid}', '${escapeQuotes(f.val)}')">Show</span>` : ''}
+                  <span class="copy-btn" onclick="copyValue('${escapeQuotes(f.val)}')">Copy</span>
+                </div>
+              </div>
+            `;
+          });
+
+          itemsHtml += `
+            <div class="service-box">
+              <div class="service-header">
+                <span class="service-title">${escapeHtml(item.title)}</span>
+                <div class="btn-row">
+                  <button class="secondary sm" onclick="editItem(${pIdx}, ${realIdx})">Edit</button>
+                  <button class="danger sm" onclick="deleteItem(${pIdx}, ${realIdx})">Delete</button>
+                </div>
+              </div>
+              <div class="fields-list">${fieldsHtml}</div>
+              ${item.notes ? `<div style="font-size:0.8rem; color:var(--muted); margin-top:8px; border-top:1px dashed var(--border); padding-top:6px;"><strong>Note:</strong> ${escapeHtml(item.notes)}</div>` : ''}
+            </div>
+          `;
+        });
+
+        pCard.innerHTML = `
+          <div class="person-header">
+            <span class="person-name">👤 ${escapeHtml(person.personName)}</span>
+            <div class="btn-row">
+              <button class="sm accent" onclick="openAddItemModal(${pIdx})">+ Add Account/Detail</button>
+              <button class="danger sm" onclick="deletePerson(${pIdx})">Delete Person</button>
+            </div>
+          </div>
+          <div>${itemsHtml || '<div style="color:var(--muted); font-size:0.85rem; padding:6px 0;">Koi account ya policy nahi hai. "+ Add Account/Detail" par click karein.</div>'}</div>
+        `;
+        container.appendChild(pCard);
+      });
+
+      if (!hasMatch) {
+        container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">Koi record nahi mila query ke hisaab se.</div>`;
+      }
+    };
+
+    window.toggleFieldMask = (id, text) => {
+      const el = document.getElementById(id);
+      el.textContent = (el.textContent === '••••••••') ? text : '••••••••';
+    };
+
     window.copyValue = (t) => {
       if (!t) return;
-      navigator.clipboard.writeText(t).then(() => alert("Copied: " + t));
+      navigator.clipboard.writeText(t).then(() => alert("Copied!"));
     };
 
-    window.lockSheet = () => {
-      masterKey = null;
-      vaultRows = [];
-      document.getElementById("gridBox").classList.add("hidden");
-      document.getElementById("masterBox").classList.remove("hidden");
+    window.lockVault = () => {
+      masterCryptoKey = null;
+      vaultData = [];
+      document.getElementById("viewVault").classList.add("hidden");
+      document.getElementById("viewMasterKey").classList.remove("hidden");
     };
 
-    window.logOut = async () => {
-      masterKey = null;
-      vaultRows = [];
+    window.handleLogout = async () => {
+      masterCryptoKey = null;
+      vaultData = [];
       await signOut(auth);
     };
 
@@ -434,56 +532,74 @@
 
 <div class="container">
 
-  <!-- STEP 1: AUTHENTICATION -->
-  <div id="authBox" class="card" style="max-width:480px; margin: 40px auto;">
+  <!-- STEP 1: AUTH -->
+  <div id="viewAuth" class="card" style="max-width:480px; margin: 40px auto;">
     <h1>🛡️ OmniVault Access</h1>
-    <p>Apne authorized email credentials se sign-in karein.</p>
+    <p>Apne authorized email se sign-in karein.</p>
     <label>Email</label>
-    <input type="email" id="uEmail" placeholder="your-email@gmail.com" />
+    <input type="email" id="loginEmail" placeholder="your-email@gmail.com" />
     <label>Password</label>
-    <input type="password" id="uPass" placeholder="••••••••" />
-    <button onclick="signIn()">Sign In</button>
+    <input type="password" id="loginPass" placeholder="••••••••" />
+    <button onclick="handleLogin()">Sign In</button>
   </div>
 
   <!-- STEP 2: MASTER DECRYPTION -->
-  <div id="masterBox" class="card hidden" style="max-width:480px; margin: 40px auto;">
-    <h1>🔐 Unlock Dynamic Matrix</h1>
-    <p>Apna Master Passphrase enter karein jo is sheet ko decrypt karega.</p>
+  <div id="viewMasterKey" class="card hidden" style="max-width:480px; margin: 40px auto;">
+    <h1>🔐 Master Passphrase</h1>
+    <p>Apna Master Key daalein jisse data decrypt ho sake.</p>
     <label>Master Passphrase</label>
-    <input type="password" id="masterKey" placeholder="Master Key..." />
+    <input type="password" id="masterPassInput" placeholder="Master Key..." />
     <div class="btn-row">
-      <button onclick="unlockSheet()">Unlock & Sync</button>
-      <button class="secondary" onclick="logOut()">Sign Out</button>
+      <button onclick="unlockVault()">Decrypt & Sync</button>
+      <button class="secondary" onclick="handleLogout()">Sign Out</button>
     </div>
   </div>
 
-  <!-- STEP 3: EXCEL SHEET GRID INTERFACE -->
-  <div id="gridBox" class="hidden">
+  <!-- STEP 3: MAIN VIEW -->
+  <div id="viewVault" class="hidden">
     
-    <div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px;">
-      <div class="btn-row">
-        <span class="status-badge">● EXCEL E2EE MATRIX</span>
-        <button class="sm" onclick="addRow()">+ Add New Row</button>
-        <button class="sm secondary" onclick="addColumn()">+ Add Custom Column</button>
+    <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <span class="status-badge">● MULTI-ENTITY E2EE ACTIVE</span>
       </div>
       <div class="btn-row">
-        <button class="sm secondary" onclick="lockSheet()">Lock</button>
-        <button class="sm danger" onclick="logOut()">Logout</button>
+        <button onclick="addNewPerson()">+ Add Person / Entity</button>
+        <button class="sm secondary" onclick="lockVault()">Lock</button>
+        <button class="sm danger" onclick="handleLogout()">Logout</button>
       </div>
     </div>
 
-    <!-- Live Universal Search -->
-    <div class="card" style="padding: 10px 14px; margin-bottom: 8px;">
-      <input type="text" id="searchBar" placeholder="🔍 Search any cell (Item, card, policy, CVV, pin, notes)..." oninput="renderGrid()" style="margin-bottom:0;" />
+    <!-- Search Bar -->
+    <div class="card" style="padding:10px 14px;">
+      <input type="text" id="searchQuery" placeholder="🔍 Search any person, account, card no, policy, PIN, note..." oninput="renderVault()" style="margin-bottom:0;" />
     </div>
 
-    <!-- Dynamic Excel Table -->
-    <div class="sheet-wrapper">
-      <table class="excel-table">
-        <thead id="gridHead"></thead>
-        <tbody id="gridBody"></tbody>
-      </table>
+    <!-- ADD/EDIT ITEM MODAL -->
+    <div id="itemModal" class="card hidden" style="border: 1px solid var(--primary);">
+      <h2 id="itemModalTitle">Add Account / Detail</h2>
+      
+      <label>1. Kiska Account / Service Hai? (e.g. LIC Policy, SBI Savings, HDFC Card, Income Tax)</label>
+      <input type="text" id="serviceTitleInput" placeholder="Title likhein..." />
+
+      <label>2. Uske andar ke Details (Dynamic Custom Fields)</label>
+      <div id="dynamicFieldsBox"></div>
+      
+      <div class="btn-row" style="margin-bottom:14px;">
+        <button type="button" class="secondary sm" onclick="addDynamicFieldRow('', '')">+ Add Text Detail</button>
+        <button type="button" class="secondary sm" onclick="addDynamicFieldRow('', '', true)">+ Add Secret Detail</button>
+      </div>
+
+      <label>Notes / Additional Info</label>
+      <textarea id="serviceNotesInput" rows="2" placeholder="Nominee, branch, phone number, instructions..."></textarea>
+
+      <div class="btn-row">
+        <button onclick="saveItem()">Save Encrypted</button>
+        <button class="secondary" onclick="closeItemModal()">Cancel</button>
+      </div>
     </div>
+
+    <!-- HIERARCHICAL LIST OF PEOPLE & ACCOUNTS -->
+    <div id="vaultList"></div>
 
   </div>
 
