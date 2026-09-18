@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>OmniVault - Encrypted Multi-Device Vault</title>
+  <style>
+    :root {
+      --bg: #090d16;
+      --card: #131b2e;
+      --card-inner: #0b1220;
+      --border: #202d44;
+      --primary: #38bdf8;
+      --primary-hover: #0284c7;
+      --accent: #6366f1;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --danger: #ef4444;
+      --success: #10b981;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 14px; display: flex; justify-content: center; min-height: 100vh; }
+    .app-container { width: 100%; max-width: 720px; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 14px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    }
+
+    h1 { font-size: 1.25rem; color: var(--primary); display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    h2 { font-size: 1.05rem; color: #e2e8f0; margin-bottom: 12px; }
+    p { font-size: 0.85rem; color: var(--muted); margin-bottom: 14px; line-height: 1.4; }
+
+    label { font-size: 0.78rem; font-weight: 600; color: var(--muted); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+    input, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--card-inner);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      color: #fff;
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+    }
+    input:focus, textarea:focus { outline: none; border-color: var(--primary); }
+
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    button {
+      background: var(--primary);
+      color: #04101e;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 7px;
+      font-weight: 600;
+      font-size: 0.88rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    button:hover { background: var(--primary-hover); }
+    button.secondary { background: #1e293b; color: #cbd5e1; border: 1px solid var(--border); }
+    button.secondary:hover { background: #334155; }
+    button.danger { background: var(--danger); color: #fff; }
+    button.sm { padding: 5px 10px; font-size: 0.78rem; }
+
+    .field-pair {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr auto;
+      gap: 8px;
+      margin-bottom: 8px;
+      align-items: center;
+    }
+    .field-pair input { margin-bottom: 0; }
+
+    .vault-item {
+      background: var(--card-inner);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+    }
+    .item-title { font-size: 1.05rem; font-weight: 700; color: var(--primary); }
+    .item-category {
+      font-size: 0.72rem;
+      background: #1e293b;
+      padding: 3px 8px;
+      border-radius: 12px;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      margin-left: 6px;
+    }
+    
+    .data-grid { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+    .data-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      padding: 6px 8px;
+      border-radius: 5px;
+      background: rgba(255,255,255,0.02);
+    }
+    .data-key { color: var(--muted); font-weight: 500; }
+    .data-val-wrapper { display: flex; align-items: center; gap: 8px; max-width: 65%; word-break: break-all; text-align: right; }
+    .action-btn { color: var(--primary); cursor: pointer; font-size: 0.78rem; text-decoration: none; }
+    .action-btn:hover { text-decoration: underline; }
+
+    .search-container { position: relative; margin-bottom: 14px; }
+    .search-container input {
+      padding-left: 36px;
+      margin-bottom: 0;
+      border-radius: 20px;
+      background: #080c14;
+    }
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .status-badge { font-size: 0.75rem; color: var(--success); font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+    .hidden { display: none !important; }
+  </style>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } 
+      from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, onSnapshot } 
+      from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDPc7uJ3vhGJonnLmtySIgbcEdPCmuZcXg",
+      authDomain: "credentials-vault-d867d.firebaseapp.com",
+      projectId: "credentials-vault-d867d",
+      storageBucket: "credentials-vault-d867d.firebasestorage.app",
+      messagingSenderId: "91849339799",
+      appId: "1:91849339799:web:fd75a7cc39930b6108cad2"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let currentUser = null;
+    let cloudRawPayload = null;
+    let masterCryptoKey = null;
+    let decryptedRecords = [];
+    let editingRecordId = null;
+
+    async function deriveKey(passphrase, salt) {
+      const enc = new TextEncoder();
+      const baseKey = await crypto.subtle.importKey(
+        "raw", enc.encode(passphrase), { name: "PBKDF2" }, false, ["deriveKey"]
+      );
+      return crypto.subtle.deriveKey(
+        { name: "PBKDF2", salt: salt, iterations: 100000, hash: "SHA-256" },
+        baseKey,
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["encrypt", "decrypt"]
+      );
+    }
+
+    async function encryptPayload(dataObj, key) {
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const enc = new TextEncoder();
+      const cipher = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv: iv },
+        key,
+        enc.encode(JSON.stringify(dataObj))
+      );
+      return {
+        iv: Array.from(iv),
+        cipher: Array.from(new Uint8Array(cipher))
+      };
+    }
+
+    async function decryptPayload(cipherArray, ivArray, key) {
+      const iv = new Uint8Array(ivArray);
+      const cipher = new Uint8Array(cipherArray);
+      const decrypted = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: iv },
+        key,
+        cipher
+      );
+      return JSON.parse(new TextDecoder().decode(decrypted));
+    }
+
+    onAuthStateChanged(auth, (user) => {
+      currentUser = user;
+      if (user) {
+        document.getElementById("viewAuth").classList.add("hidden");
+        document.getElementById("viewMasterKey").classList.remove("hidden");
+        listenToFirestore(user.uid);
+      } else {
+        document.getElementById("viewAuth").classList.remove("hidden");
+        document.getElementById("viewMasterKey").classList.add("hidden");
+        document.getElementById("viewVault").classList.add("hidden");
+      }
+    });
+
+    function listenToFirestore(uid) {
+      const docRef = doc(db, "vaults", uid);
+      onSnapshot(docRef, async (snap) => {
+        if (snap.exists()) {
+          cloudRawPayload = snap.data();
+          if (masterCryptoKey) {
+            try {
+              decryptedRecords = await decryptPayload(cloudRawPayload.cipher, cloudRawPayload.iv, masterCryptoKey);
+              renderVault();
+            } catch (err) {
+              console.error("Auto-sync decrypt failed", err);
+            }
+          }
+        } else {
+          cloudRawPayload = null;
+          if (masterCryptoKey) {
+            decryptedRecords = [];
+            renderVault();
+          }
+        }
+      });
+    }
+
+    window.handleLogin = async () => {
+      const email = document.getElementById("loginEmail").value.trim();
+      const pass = document.getElementById("loginPass").value.trim();
+      try {
+        await signInWithEmailAndPassword(auth, email, pass);
+      } catch (err) {
+        alert("Login Error: " + err.message);
+      }
+    };
+
+    window.unlockVault = async () => {
+      const masterPass = document.getElementById("masterPassInput").value.trim();
+      if (!masterPass) return alert("Master Passphrase daalein!");
+
+      try {
+        let salt;
+        if (cloudRawPayload && cloudRawPayload.salt) {
+          salt = new Uint8Array(cloudRawPayload.salt);
+        } else {
+          salt = crypto.getRandomValues(new Uint8Array(16));
+        }
+
+        const derived = await deriveKey(masterPass, salt);
+
+        if (cloudRawPayload && cloudRawPayload.cipher) {
+          decryptedRecords = await decryptPayload(cloudRawPayload.cipher, cloudRawPayload.iv, derived);
+        } else {
+          decryptedRecords = [];
+        }
+
+        masterCryptoKey = derived;
+        document.getElementById("viewMasterKey").classList.add("hidden");
+        document.getElementById("viewVault").classList.remove("hidden");
+        document.getElementById("masterPassInput").value = "";
+        renderVault();
+      } catch (e) {
+        alert("Galat Master Key! Decryption fail ho gaya.");
+        console.error(e);
+      }
+    };
+
+    window.addDynamicFieldRow = (k = "", v = "", isSecret = false) => {
+      const container = document.getElementById("dynamicFieldsBox");
+      const row = document.createElement("div");
+      row.className = "field-pair";
+      row.innerHTML = `
+        <input type="text" placeholder="Field (e.g. CVV, Policy No, PIN)" value="${escapeQuotes(k)}" class="f-key" />
+        <input type="${isSecret ? 'password' : 'text'}" placeholder="Value" value="${escapeQuotes(v)}" class="f-val" />
+        <button type="button" class="danger sm" onclick="this.parentElement.remove()">✕</button>
+      `;
+      container.appendChild(row);
+    };
+
+    window.openAddModal = () => {
+      editingRecordId = null;
+      document.getElementById("formModalTitle").textContent = "Add New Entry";
+      document.getElementById("recTitle").value = "";
+      document.getElementById("recCategory").value = "";
+      document.getElementById("recNotes").value = "";
+      document.getElementById("dynamicFieldsBox").innerHTML = "";
+      
+      window.addDynamicFieldRow("Card / User Number", "");
+      window.addDynamicFieldRow("Password / PIN", "", true);
+
+      document.getElementById("formModal").classList.remove("hidden");
+      document.getElementById("formModal").scrollIntoView({ behavior: 'smooth' });
+    };
+
+    window.closeFormModal = () => {
+      document.getElementById("formModal").classList.add("hidden");
+    };
+
+    window.saveRecord = async () => {
+      const title = document.getElementById("recTitle").value.trim();
+      const category = document.getElementById("recCategory").value.trim() || "General";
+      const notes = document.getElementById("recNotes").value.trim();
+
+      if (!title) return alert("Title daalna zaroori hai!");
+
+      const fieldPairs = [];
+      const keys = document.querySelectorAll(".f-key");
+      const vals = document.querySelectorAll(".f-val");
+
+      for (let i = 0; i < keys.length; i++) {
+        const k = keys[i].value.trim();
+        const v = vals[i].value.trim();
+        if (k || v) {
+          fieldPairs.push({
+            key: k,
+            val: v,
+            isSecret: vals[i].type === "password"
+          });
+        }
+      }
+
+      if (editingRecordId) {
+        const idx = decryptedRecords.findIndex(r => r.id === editingRecordId);
+        if (idx !== -1) {
+          decryptedRecords[idx] = {
+            id: editingRecordId,
+            title,
+            category,
+            notes,
+            fields: fieldPairs,
+            updatedAt: new Date().toISOString()
+          };
+        }
+      } else {
+        decryptedRecords.unshift({
+          id: Date.now(),
+          title,
+          category,
+          notes,
+          fields: fieldPairs,
+          updatedAt: new Date().toISOString()
+        });
+      }
+
+      await syncCloud();
+      window.closeFormModal();
+      renderVault();
+    };
+
+    window.editRecord = (id) => {
+      const rec = decryptedRecords.find(r => r.id === id);
+      if (!rec) return;
+
+      editingRecordId = id;
+      document.getElementById("formModalTitle").textContent = "Edit Entry";
+      document.getElementById("recTitle").value = rec.title || "";
+      document.getElementById("recCategory").value = rec.category || "";
+      document.getElementById("recNotes").value = rec.notes || "";
+
+      const box = document.getElementById("dynamicFieldsBox");
+      box.innerHTML = "";
+      (rec.fields || []).forEach(f => {
+        window.addDynamicFieldRow(f.key, f.val, f.isSecret);
+      });
+
+      document.getElementById("formModal").classList.remove("hidden");
+      document.getElementById("formModal").scrollIntoView({ behavior: 'smooth' });
+    };
+
+    window.deleteRecord = async (id) => {
+      if (confirm("Permanently delete karna hai?")) {
+        decryptedRecords = decryptedRecords.filter(r => r.id !== id);
+        await syncCloud();
+        renderVault();
+      }
+    };
+
+    async function syncCloud() {
+      if (!currentUser || !masterCryptoKey) return;
+      const encrypted = await encryptPayload(decryptedRecords, masterCryptoKey);
+
+      let saltArr = (cloudRawPayload && cloudRawPayload.salt) 
+        ? cloudRawPayload.salt 
+        : Array.from(crypto.getRandomValues(new Uint8Array(16)));
+
+      await setDoc(doc(db, "vaults", currentUser.uid), {
+        iv: encrypted.iv,
+        cipher: encrypted.cipher,
+        salt: saltArr,
+        lastModified: new Date().toISOString()
+      });
+    }
+
+    window.renderVault = () => {
+      const container = document.getElementById("vaultList");
+      const query = (document.getElementById("searchQuery").value || "").trim().toLowerCase();
+      container.innerHTML = "";
+
+      const filtered = decryptedRecords.filter(r => {
+        if (!query) return true;
+        if (r.title.toLowerCase().includes(query)) return true;
+        if (r.category.toLowerCase().includes(query)) return true;
+        if (r.notes && r.notes.toLowerCase().includes(query)) return true;
+        return (r.fields || []).some(f => 
+          f.key.toLowerCase().includes(query) || f.val.toLowerCase().includes(query)
+        );
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">No matching credentials found.</div>`;
+        return;
+      }
+
+      filtered.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "vault-item";
+
+        let fieldsHtml = "";
+        (item.fields || []).forEach((f, idx) => {
+          const fid = `field_${item.id}_${idx}`;
+          const isHidden = f.isSecret;
+          fieldsHtml += `
+            <div class="data-row">
+              <span class="data-key">${escapeHtml(f.key)}:</span>
+              <div class="data-val-wrapper">
+                <span id="${fid}">${isHidden ? '••••••••' : escapeHtml(f.val)}</span>
+                ${isHidden ? `<span class="action-btn" onclick="toggleFieldMask('${fid}', '${escapeQuotes(f.val)}')">Show</span>` : ''}
+                <span class="action-btn" onclick="copyToClipboard('${escapeQuotes(f.val)}')">Copy</span>
+              </div>
+            </div>
+          `;
+        });
+
+        div.innerHTML = `
+          <div class="item-header">
+            <div>
+              <span class="item-title">${escapeHtml(item.title)}</span>
+              <span class="item-category">${escapeHtml(item.category)}</span>
+            </div>
+            <div class="btn-row">
+              <button class="secondary sm" onclick="editRecord(${item.id})">Edit</button>
+              <button class="danger sm" onclick="deleteRecord(${item.id})">Delete</button>
+            </div>
+          </div>
+          <div class="data-grid">
+            ${fieldsHtml}
+          </div>
+          ${item.notes ? `<div style="font-size:0.8rem; color:var(--muted); margin-top:6px; border-top:1px dashed var(--border); padding-top:6px;"><strong>Note:</strong> ${escapeHtml(item.notes)}</div>` : ''}
+        `;
+        container.appendChild(div);
+      });
+    };
+
+    window.toggleFieldMask = (elementId, actualVal) => {
+      const el = document.getElementById(elementId);
+      el.textContent = (el.textContent === '••••••••') ? actualVal : '••••••••';
+    };
+
+    window.copyToClipboard = (txt) => {
+      navigator.clipboard.writeText(txt).then(() => alert("Copied to clipboard!"));
+    };
+
+    window.lockVault = () => {
+      masterCryptoKey = null;
+      decryptedRecords = [];
+      document.getElementById("viewVault").classList.add("hidden");
+      document.getElementById("viewMasterKey").classList.remove("hidden");
+    };
+
+    window.handleLogout = async () => {
+      masterCryptoKey = null;
+      decryptedRecords = [];
+      await signOut(auth);
+    };
+
+    function escapeHtml(s) { return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+    function escapeQuotes(s) { return (s || "").replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
+  </script>
+</head>
+<body>
+
+<div class="app-container">
+
+  <div id="viewAuth" class="card">
+    <h1>🛡️ OmniVault Access</h1>
+    <p>Apne authorized email se sign-in karein.</p>
+    <label>Email</label>
+    <input type="email" id="loginEmail" placeholder="your-email@gmail.com" />
+    <label>Password</label>
+    <input type="password" id="loginPass" placeholder="••••••••" />
+    <button onclick="handleLogin()">Sign In to Cloud</button>
+  </div>
+
+  <div id="viewMasterKey" class="card hidden">
+    <h1>🔐 Master Passphrase</h1>
+    <p>Database me data encrypted hai. Access karne ke liye apni Master Key daalein.</p>
+    <label>Master Passphrase</label>
+    <input type="password" id="masterPassInput" placeholder="Enter Master Key (Never stored in cloud)..." />
+    <div class="btn-row">
+      <button onclick="unlockVault()">Decrypt & Sync</button>
+      <button class="secondary" onclick="handleLogout()">Sign Out</button>
+    </div>
+  </div>
+
+  <div id="viewVault" class="hidden">
+    <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <span class="status-badge">● AES-256 E2EE ACTIVE</span>
+      </div>
+      <div class="btn-row">
+        <button class="sm secondary" onclick="lockVault()">Lock</button>
+        <button class="sm danger" onclick="handleLogout()">Logout</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex; gap:8px; margin-bottom:0;">
+        <div class="search-container" style="flex:1;">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchQuery" placeholder="Partial search (Card, LIC, Policy, Name, Note)..." oninput="renderVault()" />
+        </div>
+        <button onclick="openAddModal()" style="white-space:nowrap; height:42px;">+ Add New</button>
+      </div>
+    </div>
+
+    <div id="formModal" class="card hidden" style="border: 1px solid var(--primary);">
+      <h2 id="formModalTitle">Add New Entry</h2>
+      
+      <label>Title / Name</label>
+      <input type="text" id="recTitle" placeholder="e.g. HDFC Regalia, LIC Policy, GST Portal" />
+
+      <label>Category (Optional)</label>
+      <input type="text" id="recCategory" placeholder="e.g. Banking, Insurance, Pharmacy, Personal" />
+
+      <label>Custom Data Fields</label>
+      <div id="dynamicFieldsBox"></div>
+      
+      <div class="btn-row" style="margin-bottom:14px;">
+        <button type="button" class="secondary sm" onclick="addDynamicFieldRow('', '')">+ Add Normal Field</button>
+        <button type="button" class="secondary sm" onclick="addDynamicFieldRow('', '', true)">+ Add Hidden/Secret Field</button>
+      </div>
+
+      <label>Notes / Recovery Details</label>
+      <textarea id="recNotes" rows="2" placeholder="Renewal dates, agent number, security answers..."></textarea>
+
+      <div class="btn-row">
+        <button onclick="saveRecord()">Save & Encrypt</button>
+        <button class="secondary" onclick="closeFormModal()">Cancel</button>
+      </div>
+    </div>
+
+    <div id="vaultList"></div>
+  </div>
+
+</div>
+
+</body>
+</html>
