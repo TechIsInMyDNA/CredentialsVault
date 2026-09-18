@@ -255,7 +255,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } 
       from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-    import { getFirestore, doc, setDoc, onSnapshot } 
+    import { getFirestore, doc, setDoc, onSnapshot, getDoc } 
       from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
     const firebaseConfig = {
@@ -279,7 +279,7 @@
     let openFolders = {};
     let idleTimer = null;
 
-    // --- CRYPTO (AES-GCM 256) ---
+    // --- CRYPTO (AES-GCM 256 + PBKDF2) ---
     async function deriveKey(pass, salt) {
       const enc = new TextEncoder();
       const baseKey = await crypto.subtle.importKey("raw", enc.encode(pass), { name: "PBKDF2" }, false, ["deriveKey"]);
@@ -306,12 +306,12 @@
       return JSON.parse(new TextDecoder().decode(dec));
     }
 
-    // --- IDLE & BACKGROUND AUTO-LOCK OPTIMIZATION ---
+    // --- IDLE AUTO-LOCK ---
     function resetIdleTimer() {
       clearTimeout(idleTimer);
       idleTimer = setTimeout(() => {
         if (masterCryptoKey) window.lockVault();
-      }, 5 * 60 * 1000); // 5 minutes inactivity
+      }, 5 * 60 * 1000);
     }
     ['touchstart', 'mousedown', 'keydown', 'scroll'].forEach(e => window.addEventListener(e, resetIdleTimer));
     document.addEventListener("visibilitychange", () => {
@@ -341,7 +341,9 @@
           cloudPayload = snap.data();
           if (masterCryptoKey) {
             try {
-              vaultData = await decryptPayload(cloudPayload.cipher, cloudPayload.iv, masterCryptoKey);
+              const cipherArr = Object.values(cloudPayload.cipher);
+              const ivArr = Object.values(cloudPayload.iv);
+              vaultData = await decryptPayload(cipherArr, ivArr, masterCryptoKey);
               renderApp();
             } catch(e) { console.error("Sync decrypt failed", e); }
           }
@@ -356,25 +358,40 @@
       catch (err) { alert(err.message); }
     };
 
+    // MULTI-DEVICE ROBUST UNLOCK
     window.unlockVault = async () => {
       const pass = document.getElementById("masterInput").value.trim();
       if (!pass) return alert("Master key daalein!");
 
+      // Check cloud payload directly agar sync delay ho
+      if (!cloudPayload && currentUser) {
+        try {
+          const snap = await getDoc(doc(db, "vaults", currentUser.uid));
+          if (snap.exists()) {
+            cloudPayload = snap.data();
+          }
+        } catch (fetchErr) {
+          console.error("Direct fetch error:", fetchErr);
+        }
+      }
+
       try {
         let salt;
-        if (cloudPayload && Array.isArray(cloudPayload.salt) && cloudPayload.salt.length === 16) {
-          salt = new Uint8Array(cloudPayload.salt);
+        if (cloudPayload && cloudPayload.salt) {
+          salt = new Uint8Array(Object.values(cloudPayload.salt));
         } else {
           salt = crypto.getRandomValues(new Uint8Array(16));
         }
 
         const derived = await deriveKey(pass, salt);
 
-        if (cloudPayload && cloudPayload.cipher) {
+        if (cloudPayload && cloudPayload.cipher && cloudPayload.iv) {
           try {
-            vaultData = await decryptPayload(cloudPayload.cipher, cloudPayload.iv, derived);
+            const cipherArr = Object.values(cloudPayload.cipher);
+            const ivArr = Object.values(cloudPayload.iv);
+            vaultData = await decryptPayload(cipherArr, ivArr, derived);
           } catch(e) {
-            alert("Galat Master Key!");
+            alert("Galat Master Key! Check karein Caps Lock on toh nahi hai ya extra space toh nahi hai.");
             return;
           }
         } else {
@@ -412,7 +429,7 @@
         tabsHtml += `
           <div class="tab-chip ${idx === activePersonIdx ? 'active' : ''}" onclick="selectPerson(${idx})">
             <span>👤 ${escapeHtml(p.name)}</span>
-            <span style="opacity:0.6; font-size:0.7rem;" onclick="event.stopPropagation(); managePerson(${idx})">⚙</span>
+            <span style="opacity:0.6; font-size:0.75rem;" onclick="event.stopPropagation(); managePerson(${idx})" title="Edit/Delete Person">⚙</span>
           </div>`;
       });
       tabsHtml += `<div class="tab-chip" onclick="promptNewPerson()">+ Add Person</div>`;
@@ -507,7 +524,7 @@
       renderApp();
     };
 
-    // --- FOLDER EDIT / DELETE OPERATIONS ---
+    // --- FOLDER EDIT & DELETE ---
     window.renameFolder = async (fIdx) => {
       const folder = vaultData[activePersonIdx].folders[fIdx];
       const newName = prompt("Folder ka naya naam:", folder.name);
@@ -526,10 +543,10 @@
       }
     };
 
-    // --- PERSON EDIT / DELETE OPERATIONS ---
+    // --- PERSON EDIT & DELETE ---
     window.managePerson = async (pIdx) => {
       const p = vaultData[pIdx];
-      const choice = prompt(`1: Rename "${p.name}"\n2: Delete "${p.name}"\nChoice daalein (1 ya 2):`);
+      const choice = prompt(`Options for "${p.name}":\n1: Rename\n2: Delete\n\nChoice likhein (1 ya 2):`);
       if (choice === "1") {
         const newName = prompt("Naya naam:", p.name);
         if (newName && newName.trim()) {
@@ -538,7 +555,7 @@
           renderApp();
         }
       } else if (choice === "2") {
-        if (confirm(`Confirm: Delete person "${p.name}" and all their folders?`)) {
+        if (confirm(`Confirm: Delete "${p.name}" aur unka saara data?`)) {
           vaultData.splice(pIdx, 1);
           if (activePersonIdx >= vaultData.length) activePersonIdx = Math.max(0, vaultData.length - 1);
           await syncCloud();
@@ -565,7 +582,7 @@
       renderApp();
     };
 
-    // --- ITEM RECORD MODAL ---
+    // --- MODAL CONTROLS ---
     let curFIdx = null;
     let curIIdx = null;
 
@@ -656,23 +673,28 @@
     async function syncCloud() {
       if (!currentUser || !masterCryptoKey) return;
       const encrypted = await encryptPayload(vaultData, masterCryptoKey);
-      let saltArr = (cloudPayload && cloudPayload.salt) ? cloudPayload.salt : Array.from(crypto.getRandomValues(new Uint8Array(16)));
+      let saltArr = (cloudPayload && cloudPayload.salt) 
+        ? Object.values(cloudPayload.salt) 
+        : Array.from(crypto.getRandomValues(new Uint8Array(16)));
 
-      await setDoc(doc(db, "vaults", currentUser.uid), {
+      const payloadToSave = {
         iv: encrypted.iv,
         cipher: encrypted.cipher,
         salt: saltArr,
         lastModified: new Date().toISOString()
-      });
+      };
+
+      await setDoc(doc(db, "vaults", currentUser.uid), payloadToSave);
+      cloudPayload = payloadToSave;
     }
 
-    // --- BACKUP EXPORT / IMPORT OPTIMIZATION ---
+    // --- ENCRYPTED BACKUP EXPORT & IMPORT ---
     window.exportEncryptedBackup = () => {
       if (!cloudPayload) return alert("No data to export!");
       const blob = new Blob([JSON.stringify(cloudPayload, null, 2)], { type: "application/json" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
-      a.download = `OmniVault_Encrypted_Backup_${Date.now()}.json`;
+      a.download = `OmniVault_Backup_${Date.now()}.json`;
       a.click();
     };
 
@@ -687,9 +709,9 @@
         try {
           const parsed = JSON.parse(text);
           if (parsed.cipher && parsed.iv && parsed.salt) {
-            if (confirm("Restore this encrypted backup? Current cloud data will be overwritten.")) {
+            if (confirm("Backup restore karna hai? Purana cloud data overwrite ho jayega.")) {
               await setDoc(doc(db, "vaults", currentUser.uid), parsed);
-              alert("Backup Restored! Refresh page.");
+              alert("Backup Restored! Page refresh ho raha hai.");
               location.reload();
             }
           } else {
@@ -722,7 +744,7 @@
 </head>
 <body>
 
-  <!-- 1. LOGIN -->
+  <!-- SCREEN 1: LOGIN -->
   <div id="screenAuth" style="padding:24px; max-width:400px; margin: 50px auto;">
     <h2 style="color:var(--primary); margin-bottom:12px;">🛡️ OmniVault</h2>
     <label>Email</label>
@@ -732,16 +754,16 @@
     <button class="btn btn-primary" style="width:100%;" onclick="doLogin()">Sign In</button>
   </div>
 
-  <!-- 2. MASTER PASSPHRASE -->
+  <!-- SCREEN 2: MASTER KEY -->
   <div id="screenMaster" class="hidden" style="padding:24px; max-width:400px; margin: 50px auto;">
     <h2 style="color:var(--primary); margin-bottom:12px;">🔐 Unlock Vault</h2>
-    <p style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">Data zero-knowledge encrypted hai.</p>
+    <p style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">Zero-Knowledge Client-Side Decryption.</p>
     <label>Master Passphrase</label>
     <input type="password" id="masterInput" placeholder="Master Key..." />
     <button class="btn btn-primary" style="width:100%;" onclick="unlockVault()">Decrypt</button>
   </div>
 
-  <!-- 3. MOBILE VAULT -->
+  <!-- SCREEN 3: MOBILE VAULT -->
   <div id="screenVault" class="hidden">
     
     <!-- Top Sticky Bar -->
@@ -756,7 +778,7 @@
       </div>
       <div class="search-box">
         <span>🔍</span>
-        <input type="text" id="searchBar" placeholder="Quick search cards, pins, banks..." oninput="renderApp()" />
+        <input type="text" id="searchBar" placeholder="Search cards, pins, banks..." oninput="renderApp()" />
       </div>
     </div>
 
