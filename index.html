@@ -16,20 +16,17 @@
       --surface-sub: #1b2742;
       --border: #243556;
       --primary: #38bdf8;
-      --primary-dim: rgba(56, 189, 248, 0.12);
       --accent: #818cf8;
       --text: #f8fafc;
       --muted: #94a3b8;
       --danger: #ef4444;
       --success: #10b981;
-      --folder-color: #f59e0b;
       --safe-bottom: env(safe-area-inset-bottom, 16px);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
     body { background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: calc(85px + var(--safe-bottom)); user-select: none; }
 
-    /* TOP BAR */
     .top-bar {
       position: sticky;
       top: 0;
@@ -40,7 +37,7 @@
       border-bottom: 1px solid var(--border);
     }
     .brand-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .brand-title { font-size: 1.15rem; font-weight: 800; color: var(--primary); letter-spacing: 0.5px; }
+    .brand-title { font-size: 1.15rem; font-weight: 800; color: var(--primary); }
     .status-dot { font-size: 0.75rem; color: var(--success); font-weight: 700; display: flex; align-items: center; gap: 5px; }
 
     .search-box {
@@ -61,7 +58,6 @@
       outline: none;
     }
 
-    /* PERSON CHIPS */
     .person-tabs {
       display: flex;
       gap: 8px;
@@ -83,7 +79,6 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      transition: all 0.2s;
     }
     .tab-chip.active {
       background: var(--primary);
@@ -92,10 +87,8 @@
       font-weight: 700;
     }
 
-    /* MAIN CONTAINER */
     .main-content { padding: 12px 16px; max-width: 720px; margin: 0 auto; }
 
-    /* FOLDER ACCORDION */
     .folder-card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -109,13 +102,10 @@
       justify-content: space-between;
       align-items: center;
       cursor: pointer;
-      background: rgba(255,255,255,0.01);
     }
     .folder-title-box { display: flex; align-items: center; gap: 8px; flex: 1; overflow: hidden; }
-    .folder-icon { font-size: 1.1rem; }
     .folder-name { font-size: 0.92rem; font-weight: 700; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .folder-count { font-size: 0.72rem; background: var(--surface-sub); padding: 2px 7px; border-radius: 10px; color: var(--muted); }
-
     .folder-actions { display: flex; align-items: center; gap: 6px; margin-left: 8px; }
 
     .folder-items-container {
@@ -126,7 +116,6 @@
       border-top: 1px solid rgba(255,255,255,0.04);
     }
 
-    /* ITEM CARD */
     .item-card {
       background: var(--surface-sub);
       border: 1px solid rgba(255,255,255,0.05);
@@ -166,7 +155,6 @@
       border: 1px solid var(--border);
     }
 
-    /* FAB BUTTON */
     .fab-btn {
       position: fixed;
       bottom: calc(20px + var(--safe-bottom));
@@ -185,11 +173,8 @@
       font-weight: bold;
       cursor: pointer;
       z-index: 90;
-      transition: transform 0.15s;
     }
-    .fab-btn:active { transform: scale(0.92); }
 
-    /* MODAL BOTTOM SHEET */
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -213,7 +198,7 @@
     .sheet-title { font-size: 1.1rem; font-weight: 800; color: #fff; margin-bottom: 14px; }
     
     label { font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; display: block; }
-    input, select, textarea {
+    input, textarea {
       width: 100%;
       background: var(--bg);
       border: 1px solid var(--border);
@@ -223,7 +208,7 @@
       font-size: 0.92rem;
       margin-bottom: 12px;
     }
-    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); }
+    input:focus, textarea:focus { outline: none; border-color: var(--primary); }
 
     .btn-row { display: flex; gap: 8px; }
     button.btn {
@@ -247,14 +232,11 @@
       align-items: center;
     }
     .field-pair input { margin-bottom: 0; }
-
     .hidden { display: none !important; }
   </style>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } 
-      from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
     import { getFirestore, doc, setDoc, onSnapshot, getDoc } 
       from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
@@ -268,37 +250,35 @@
     };
 
     const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
     const db = getFirestore(app);
 
-    let currentUser = null;
-    let cloudPayload = null;
     let masterCryptoKey = null;
-    let vaultData = []; 
+    let vaultData = [];
     let activePersonIdx = 0;
     let openFolders = {};
+    let isLocked = true;
 
-    // --- BASE64 HELPER (Cross-device 100% loss-free serialization) ---
+    // --- BASE64 HELPERS ---
     function u8ToBase64(u8) {
-      let binary = "";
-      for (let i = 0; i < u8.length; i++) binary += String.fromCharCode(u8[i]);
-      return btoa(binary);
+      let bin = "";
+      for (let i = 0; i < u8.length; i++) bin += String.fromCharCode(u8[i]);
+      return btoa(bin);
+    }
+    function base64ToU8(b64) {
+      const bin = atob(b64);
+      const u8 = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      return u8;
     }
 
-    function base64ToU8(base64) {
-      const binary = atob(base64);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-      return bytes;
-    }
-
-    // --- DETERMINISTIC KEY DERIVATION (Exact match across all devices) ---
-    async function deriveKey(pass, uid) {
+    // --- ZERO-FAIL AES-GCM KEY DERIVATION ---
+    async function deriveKey(pass) {
       const enc = new TextEncoder();
-      const saltBuffer = await crypto.subtle.digest("SHA-256", enc.encode("OMNIVAULT_FIXED_SALT_" + uid));
+      // Universal deterministic salt (no random mismatch across phone/PC)
+      const salt = await crypto.subtle.digest("SHA-256", enc.encode("OMNIVAULT_SHARED_SALT_KEY"));
       const baseKey = await crypto.subtle.importKey("raw", enc.encode(pass), { name: "PBKDF2" }, false, ["deriveKey"]);
       return crypto.subtle.deriveKey(
-        { name: "PBKDF2", salt: new Uint8Array(saltBuffer), iterations: 100000, hash: "SHA-256" },
+        { name: "PBKDF2", salt: new Uint8Array(salt), iterations: 100000, hash: "SHA-256" },
         baseKey,
         { name: "AES-GCM", length: 256 },
         false,
@@ -310,84 +290,35 @@
       const iv = crypto.getRandomValues(new Uint8Array(12));
       const enc = new TextEncoder();
       const cipher = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, enc.encode(JSON.stringify(data)));
-      return {
-        iv: u8ToBase64(iv),
-        cipher: u8ToBase64(new Uint8Array(cipher))
-      };
+      return { iv: u8ToBase64(iv), cipher: u8ToBase64(new Uint8Array(cipher)) };
     }
 
-    async function decryptPayload(cipherBase64, ivBase64, key) {
-      const iv = base64ToU8(ivBase64);
-      const cipher = base64ToU8(cipherBase64);
+    async function decryptPayload(cipherB64, ivB64, key) {
+      const iv = base64ToU8(ivB64);
+      const cipher = base64ToU8(cipherB64);
       const dec = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, cipher);
       return JSON.parse(new TextDecoder().decode(dec));
     }
 
-    // --- AUTH OBSERVER ---
-    onAuthStateChanged(auth, (user) => {
-      currentUser = user;
-      if (user) {
-        document.getElementById("screenAuth").classList.add("hidden");
-        document.getElementById("screenMaster").classList.remove("hidden");
-        listenCloud(user.uid);
-      } else {
-        document.getElementById("screenAuth").classList.remove("hidden");
-        document.getElementById("screenMaster").classList.add("hidden");
-        document.getElementById("screenVault").classList.add("hidden");
-      }
-    });
-
-    // --- REALTIME LIVE SYNC (NO REFRESH / NO BUTTON) ---
-    function listenCloud(uid) {
-      const ref = doc(db, "vaults", uid);
-      onSnapshot(ref, async (snap) => {
-        if (snap.exists()) {
-          cloudPayload = snap.data();
-          if (masterCryptoKey && cloudPayload.cipher && cloudPayload.iv) {
-            try {
-              vaultData = await decryptPayload(cloudPayload.cipher, cloudPayload.iv, masterCryptoKey);
-              renderApp();
-            } catch(e) {
-              console.error("Live-sync decrypt failed", e);
-            }
-          }
-        }
-      });
-    }
-
-    window.doLogin = async () => {
-      const e = document.getElementById("authEmail").value.trim();
-      const p = document.getElementById("authPass").value.trim();
-      try { await signInWithEmailAndPassword(auth, e, p); } 
-      catch (err) { alert(err.message); }
-    };
-
-    // --- UNLOCK VAULT ---
+    // --- UNLOCK WITH MASTER PASSWORD ---
     window.unlockVault = async () => {
       const pass = document.getElementById("masterInput").value.trim();
       if (!pass) return alert("Master key daalein!");
 
-      if (!cloudPayload && currentUser) {
-        try {
-          const snap = await getDoc(doc(db, "vaults", currentUser.uid));
-          if (snap.exists()) cloudPayload = snap.data();
-        } catch (e) {
-          console.error("Fetch failed", e);
-        }
-      }
-
       try {
-        const derived = await deriveKey(pass, currentUser.uid);
+        const derived = await deriveKey(pass);
+        const snap = await getDoc(doc(db, "vaults", "SHARED_ROOT_VAULT"));
 
-        if (cloudPayload && cloudPayload.cipher && cloudPayload.iv) {
+        if (snap.exists() && snap.data().cipher) {
+          const cloudData = snap.data();
           try {
-            vaultData = await decryptPayload(cloudPayload.cipher, cloudPayload.iv, derived);
+            vaultData = await decryptPayload(cloudData.cipher, cloudData.iv, derived);
           } catch(e) {
-            alert("Galat Master Key! Check karein Caps Lock on toh nahi hai.");
+            alert("Galat Master Key! Check karein password exact wahi hai ya nahi.");
             return;
           }
         } else {
-          // Fresh template agar cloud khali ho
+          // Default baseline
           vaultData = [
             {
               id: Date.now(),
@@ -402,28 +333,59 @@
         }
 
         masterCryptoKey = derived;
+        isLocked = false;
         document.getElementById("screenMaster").classList.add("hidden");
         document.getElementById("screenVault").classList.remove("hidden");
         document.getElementById("masterInput").value = "";
+
+        // Start Live Real-time Sync
+        startRealtimeListener();
         renderApp();
-      } catch(e) { 
-        alert("Unlock error: " + e.message); 
+      } catch (err) {
+        alert("Unlock error: " + err.message);
       }
     };
 
-    // --- RENDER APP ---
+    // --- LIVE SYNC LISTENER (PC + Mobile instant update) ---
+    function startRealtimeListener() {
+      onSnapshot(doc(db, "vaults", "SHARED_ROOT_VAULT"), async (snap) => {
+        if (!isLocked && masterCryptoKey && snap.exists()) {
+          const cloud = snap.data();
+          if (cloud.cipher && cloud.iv) {
+            try {
+              vaultData = await decryptPayload(cloud.cipher, cloud.iv, masterCryptoKey);
+              renderApp();
+            } catch (e) {
+              console.warn("Incoming sync mismatch skipped");
+            }
+          }
+        }
+      });
+    }
+
+    // --- ENCRYPT & SAVE TO FIRESTORE ---
+    async function syncCloud() {
+      if (!masterCryptoKey) return;
+      const enc = await encryptPayload(vaultData, masterCryptoKey);
+      await setDoc(doc(db, "vaults", "SHARED_ROOT_VAULT"), {
+        iv: enc.iv,
+        cipher: enc.cipher,
+        updatedAt: new Date().toISOString()
+      });
+    }
+
+    // --- RENDER UI ---
     window.renderApp = () => {
       const tabsBox = document.getElementById("personTabs");
       const contentBox = document.getElementById("folderList");
       const query = (document.getElementById("searchBar").value || "").trim().toLowerCase();
 
-      // Person Chips
       let tabsHtml = "";
       vaultData.forEach((p, idx) => {
         tabsHtml += `
           <div class="tab-chip ${idx === activePersonIdx ? 'active' : ''}" onclick="selectPerson(${idx})">
             <span>👤 ${escapeHtml(p.name)}</span>
-            <span style="opacity:0.6; font-size:0.75rem;" onclick="event.stopPropagation(); managePerson(${idx})" title="Edit/Delete Person">⚙</span>
+            <span style="opacity:0.6; font-size:0.75rem;" onclick="event.stopPropagation(); managePerson(${idx})">⚙</span>
           </div>`;
       });
       tabsHtml += `<div class="tab-chip" onclick="promptNewPerson()">+ Add Person</div>`;
@@ -436,7 +398,6 @@
         return;
       }
 
-      // Folders
       let fHtml = "";
       (curPerson.folders || []).forEach((folder, fIdx) => {
         const isOpen = openFolders[`${activePersonIdx}_${fIdx}`] || query.length > 0;
@@ -493,8 +454,8 @@
                 <span class="folder-count">${filteredItems.length}</span>
               </div>
               <div class="folder-actions" onclick="event.stopPropagation()">
-                <span class="btn-action-tag" onclick="renameFolder(${fIdx})" title="Rename Folder">✏</span>
-                <span class="btn-action-tag" style="color:var(--danger);" onclick="deleteFolder(${fIdx})" title="Delete Folder">🗑</span>
+                <span class="btn-action-tag" onclick="renameFolder(${fIdx})">✏</span>
+                <span class="btn-action-tag" style="color:var(--danger);" onclick="deleteFolder(${fIdx})">🗑</span>
                 <span style="font-size:0.75rem; color:var(--muted); margin-left:4px;" onclick="toggleFolder(${fIdx})">${isOpen ? '▲' : '▼'}</span>
               </div>
             </div>
@@ -518,7 +479,6 @@
       renderApp();
     };
 
-    // --- FOLDER EDIT & DELETE ---
     window.renameFolder = async (fIdx) => {
       const folder = vaultData[activePersonIdx].folders[fIdx];
       const newName = prompt("Folder ka naya naam:", folder.name);
@@ -530,17 +490,16 @@
 
     window.deleteFolder = async (fIdx) => {
       const folder = vaultData[activePersonIdx].folders[fIdx];
-      if (confirm(`Kya aap "${folder.name}" aur iske saare records delete karna chahte hain?`)) {
+      if (confirm(`Delete "${folder.name}"?`)) {
         vaultData[activePersonIdx].folders.splice(fIdx, 1);
         await syncCloud();
         renderApp();
       }
     };
 
-    // --- PERSON EDIT & DELETE ---
     window.managePerson = async (pIdx) => {
       const p = vaultData[pIdx];
-      const choice = prompt(`Options for "${p.name}":\n1: Rename\n2: Delete\n\nChoice likhein (1 ya 2):`);
+      const choice = prompt(`Options for "${p.name}":\n1: Rename\n2: Delete\n\nChoice (1 ya 2):`);
       if (choice === "1") {
         const newName = prompt("Naya naam:", p.name);
         if (newName && newName.trim()) {
@@ -549,7 +508,7 @@
           renderApp();
         }
       } else if (choice === "2") {
-        if (confirm(`Confirm: Delete "${p.name}" aur unka saara data?`)) {
+        if (confirm(`Delete person "${p.name}"?`)) {
           vaultData.splice(pIdx, 1);
           if (activePersonIdx >= vaultData.length) activePersonIdx = Math.max(0, vaultData.length - 1);
           await syncCloud();
@@ -569,28 +528,27 @@
 
     window.promptNewFolder = async () => {
       const p = vaultData[activePersonIdx];
-      const name = prompt(`${p.name} ke liye naye Folder ka naam:`);
+      const name = prompt(`${p.name} ke liye Folder naam:`);
       if (!name || !name.trim()) return;
       p.folders.push({ id: Date.now(), name: name.trim().toUpperCase(), items: [] });
       await syncCloud();
       renderApp();
     };
 
-    // --- MODAL CONTROLS ---
+    // --- MODAL ACTIONS ---
     let curFIdx = null;
     let curIIdx = null;
 
     window.openAddModal = (fIdx) => {
       curFIdx = fIdx;
       curIIdx = null;
-      document.getElementById("modalTitle").textContent = "Add Record Details";
+      document.getElementById("modalTitle").textContent = "Add Record";
       document.getElementById("recTitle").value = "";
       document.getElementById("recNotes").value = "";
       document.getElementById("dynamicFieldsBox").innerHTML = "";
 
       window.addFieldRow("Account / ID", "");
       window.addFieldRow("Password / PIN", "", true);
-
       document.getElementById("modalSheet").classList.remove("hidden");
     };
 
@@ -606,7 +564,6 @@
       const box = document.getElementById("dynamicFieldsBox");
       box.innerHTML = "";
       (itm.fields || []).forEach(f => window.addFieldRow(f.key, f.val, f.isSecret));
-
       document.getElementById("modalSheet").classList.remove("hidden");
     };
 
@@ -617,7 +574,7 @@
       const d = document.createElement("div");
       d.className = "field-pair";
       d.innerHTML = `
-        <input type="text" placeholder="Key (CVV, IFSC)" value="${escapeQuotes(k)}" class="f-key" />
+        <input type="text" placeholder="Field (CVV, IFSC)" value="${escapeQuotes(k)}" class="f-key" />
         <input type="${isSec ? 'password' : 'text'}" placeholder="Value" value="${escapeQuotes(v)}" class="f-val" />
         <button type="button" class="btn btn-danger" style="padding:6px 10px;" onclick="this.parentElement.remove()">✕</button>
       `;
@@ -664,55 +621,6 @@
       }
     };
 
-    // --- ENCRYPT & REALTIME SAVE TO FIRESTORE ---
-    async function syncCloud() {
-      if (!currentUser || !masterCryptoKey) return;
-      const encrypted = await encryptPayload(vaultData, masterCryptoKey);
-
-      const payloadToSave = {
-        iv: encrypted.iv,
-        cipher: encrypted.cipher,
-        lastModified: new Date().toISOString()
-      };
-
-      await setDoc(doc(db, "vaults", currentUser.uid), payloadToSave);
-      cloudPayload = payloadToSave;
-    }
-
-    // --- ENCRYPTED BACKUP EXPORT & IMPORT ---
-    window.exportEncryptedBackup = () => {
-      if (!cloudPayload) return alert("No data to export!");
-      const blob = new Blob([JSON.stringify(cloudPayload, null, 2)], { type: "application/json" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = `OmniVault_Backup_${Date.now()}.json`;
-      a.click();
-    };
-
-    window.importEncryptedBackup = () => {
-      const input = document.createElement("input");
-      input.type = "file";
-      input.accept = ".json";
-      input.onchange = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const text = await file.text();
-        try {
-          const parsed = JSON.parse(text);
-          if (parsed.cipher && parsed.iv) {
-            if (confirm("Backup restore karna hai? Purana cloud data overwrite ho jayega.")) {
-              await setDoc(doc(db, "vaults", currentUser.uid), parsed);
-              alert("Backup Restored! Page refresh ho raha hai.");
-              location.reload();
-            }
-          } else {
-            alert("Invalid backup file format!");
-          }
-        } catch (err) { alert("Corrupt JSON file!"); }
-      };
-      input.click();
-    };
-
     window.toggleSecret = (id, val) => {
       const el = document.getElementById(id);
       el.textContent = el.textContent === '••••••••' ? val : '••••••••';
@@ -725,6 +633,7 @@
 
     window.lockVault = () => {
       masterCryptoKey = null;
+      isLocked = true;
       document.getElementById("screenVault").classList.add("hidden");
       document.getElementById("screenMaster").classList.remove("hidden");
     };
@@ -735,35 +644,22 @@
 </head>
 <body>
 
-  <!-- SCREEN 1: LOGIN -->
-  <div id="screenAuth" style="padding:24px; max-width:400px; margin: 50px auto;">
-    <h2 style="color:var(--primary); margin-bottom:12px;">🛡️ OmniVault</h2>
-    <label>Email</label>
-    <input type="email" id="authEmail" placeholder="your-email@gmail.com" />
-    <label>Password</label>
-    <input type="password" id="authPass" placeholder="••••••••" />
-    <button class="btn btn-primary" style="width:100%;" onclick="doLogin()">Sign In</button>
-  </div>
-
-  <!-- SCREEN 2: MASTER KEY -->
-  <div id="screenMaster" class="hidden" style="padding:24px; max-width:400px; margin: 50px auto;">
-    <h2 style="color:var(--primary); margin-bottom:12px;">🔐 Unlock Vault</h2>
-    <p style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">Deterministic Client-Side AES-256 Decryption.</p>
+  <!-- MASTER PASSPHRASE GATEWAY (Direct Access) -->
+  <div id="screenMaster" style="padding:24px; max-width:400px; margin: 60px auto;">
+    <h2 style="color:var(--primary); margin-bottom:8px;">🔐 OmniVault Unlock</h2>
+    <p style="font-size:0.85rem; color:var(--muted); margin-bottom:14px;">Enter Master Passphrase to sync and decrypt.</p>
     <label>Master Passphrase</label>
-    <input type="password" id="masterInput" placeholder="Master Key..." />
-    <button class="btn btn-primary" style="width:100%;" onclick="unlockVault()">Decrypt</button>
+    <input type="password" id="masterInput" placeholder="Enter your Master Key..." />
+    <button class="btn btn-primary" style="width:100%;" onclick="unlockVault()">Decrypt & Sync</button>
   </div>
 
-  <!-- SCREEN 3: MOBILE VAULT -->
+  <!-- MAIN VAULT INTERFACE -->
   <div id="screenVault" class="hidden">
-    
-    <!-- Top Sticky Bar -->
     <div class="top-bar">
       <div class="brand-row">
         <span class="brand-title">OmniVault</span>
-        <div style="display:flex; align-items:center; gap:6px;">
-          <span class="btn-action-tag" onclick="exportEncryptedBackup()" title="Download Backup">💾</span>
-          <span class="btn-action-tag" onclick="importEncryptedBackup()" title="Restore Backup">📥</span>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="status-dot">● SYNCED</span>
           <span class="btn-action-tag" onclick="lockVault()">Lock</span>
         </div>
       </div>
@@ -773,10 +669,8 @@
       </div>
     </div>
 
-    <!-- Person Horizontal Tabs -->
     <div class="person-tabs" id="personTabs"></div>
 
-    <!-- Folder List Accordion -->
     <div class="main-content">
       <div style="display:flex; justify-content:space-between; align-items:center; margin: 8px 0 12px;">
         <span style="font-size:0.75rem; color:var(--muted); font-weight:bold; text-transform:uppercase;">Folders & Accounts</span>
@@ -785,18 +679,16 @@
       <div id="folderList"></div>
     </div>
 
-    <!-- Floating Action Button -->
     <button class="fab-btn" onclick="promptNewFolder()" title="Add Category/Folder">+</button>
 
-    <!-- Slide-Up Modal Bottom Sheet -->
     <div id="modalSheet" class="modal-overlay hidden">
       <div class="modal-sheet">
         <div class="sheet-title" id="modalTitle">Record Details</div>
 
-        <label>Title (e.g. HDFC Millennia, SBI Saving, LIC Policy)</label>
-        <input type="text" id="recTitle" placeholder="Title..." />
+        <label>Title</label>
+        <input type="text" id="recTitle" placeholder="e.g. HDFC Regalia, LIC Policy" />
 
-        <label>Dynamic Fields (Label & Value)</label>
+        <label>Dynamic Fields</label>
         <div id="dynamicFieldsBox"></div>
 
         <div class="btn-row" style="margin-bottom:12px;">
@@ -805,7 +697,7 @@
         </div>
 
         <label>Notes</label>
-        <textarea id="recNotes" rows="2" placeholder="Renewal, nominee, branch..."></textarea>
+        <textarea id="recNotes" rows="2" placeholder="Notes..."></textarea>
 
         <div class="btn-row">
           <button class="btn btn-primary" onclick="saveModalRecord()">Save</button>
@@ -813,7 +705,6 @@
         </div>
       </div>
     </div>
-
   </div>
 
 </body>
