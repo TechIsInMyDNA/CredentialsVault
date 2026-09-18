@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>OmniVault - Dynamic Encrypted Vault</title>
+  <title>OmniVault - Multi-Level Dynamic Vault</title>
   <style>
     :root {
       --bg: #090d16;
@@ -12,7 +12,7 @@
       --border: #202d44;
       --primary: #38bdf8;
       --primary-hover: #0284c7;
-      --accent: #6366f1;
+      --accent: #818cf8;
       --text: #f8fafc;
       --muted: #94a3b8;
       --danger: #ef4444;
@@ -21,7 +21,7 @@
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background: var(--bg); color: var(--text); padding: 14px; display: flex; justify-content: center; min-height: 100vh; }
-    .app-container { width: 100%; max-width: 720px; }
+    .app-container { width: 100%; max-width: 760px; }
 
     .card {
       background: var(--card);
@@ -33,10 +33,10 @@
     }
 
     h1 { font-size: 1.25rem; color: var(--primary); display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-    h2 { font-size: 1.05rem; color: #e2e8f0; margin-bottom: 12px; }
+    h2 { font-size: 1.1rem; color: #e2e8f0; margin-bottom: 14px; }
     p { font-size: 0.85rem; color: var(--muted); margin-bottom: 14px; line-height: 1.4; }
 
-    label { font-size: 0.78rem; font-weight: 600; color: var(--muted); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+    label { font-size: 0.75rem; font-weight: 700; color: var(--muted); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
     input, textarea {
       width: 100%;
       padding: 10px 12px;
@@ -54,10 +54,10 @@
       background: var(--primary);
       color: #04101e;
       border: none;
-      padding: 10px 16px;
+      padding: 9px 15px;
       border-radius: 7px;
       font-weight: 600;
-      font-size: 0.88rem;
+      font-size: 0.85rem;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
@@ -69,8 +69,65 @@
     button.secondary { background: #1e293b; color: #cbd5e1; border: 1px solid var(--border); }
     button.secondary:hover { background: #334155; }
     button.danger { background: var(--danger); color: #fff; }
-    button.sm { padding: 6px 12px; font-size: 0.8rem; }
+    button.accent { background: var(--accent); color: #04101e; }
+    button.sm { padding: 5px 10px; font-size: 0.78rem; }
 
+    /* Level 1 Group Container */
+    .group-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .group-header {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--accent);
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Level 2 Sub-Item Card */
+    .subitem-card {
+      background: var(--card-inner);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+    .subitem-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      padding-bottom: 6px;
+    }
+    .subitem-title { font-size: 1rem; font-weight: 700; color: var(--primary); }
+
+    /* Level 3 Dynamic Fields */
+    .fields-list { display: flex; flex-direction: column; gap: 6px; }
+    .data-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      padding: 6px 10px;
+      border-radius: 5px;
+      background: rgba(255,255,255,0.02);
+    }
+    .data-key { color: var(--muted); font-weight: 600; }
+    .data-val-wrapper { display: flex; align-items: center; gap: 8px; max-width: 65%; word-break: break-all; text-align: right; }
+    .action-btn { color: var(--primary); cursor: pointer; font-size: 0.78rem; text-decoration: none; }
+    .action-btn:hover { text-decoration: underline; }
+
+    /* Dynamic field input row in modal */
     .field-pair {
       display: grid;
       grid-template-columns: 1fr 1.3fr auto;
@@ -80,47 +137,7 @@
     }
     .field-pair input { margin-bottom: 0; }
 
-    .vault-item {
-      background: var(--card-inner);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 14px;
-      margin-bottom: 12px;
-    }
-    .item-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 8px;
-      margin-bottom: 10px;
-    }
-    .item-title { font-size: 1.05rem; font-weight: 700; color: var(--primary); }
-    .item-category {
-      font-size: 0.72rem;
-      background: #1e293b;
-      padding: 3px 8px;
-      border-radius: 12px;
-      color: var(--muted);
-      border: 1px solid var(--border);
-      margin-left: 6px;
-    }
-    
-    .data-grid { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
-    .data-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.85rem;
-      padding: 6px 8px;
-      border-radius: 5px;
-      background: rgba(255,255,255,0.02);
-    }
-    .data-key { color: var(--muted); font-weight: 500; }
-    .data-val-wrapper { display: flex; align-items: center; gap: 8px; max-width: 65%; word-break: break-all; text-align: right; }
-    .action-btn { color: var(--primary); cursor: pointer; font-size: 0.78rem; text-decoration: none; }
-    .action-btn:hover { text-decoration: underline; }
-
-    .search-container { position: relative; margin-bottom: 14px; }
+    .search-container { position: relative; margin-bottom: 0; }
     .search-container input {
       padding-left: 36px;
       margin-bottom: 0;
@@ -133,10 +150,9 @@
       top: 50%;
       transform: translateY(-50%);
       color: var(--muted);
-      font-size: 0.9rem;
     }
 
-    .status-badge { font-size: 0.75rem; color: var(--success); font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+    .status-badge { font-size: 0.75rem; color: var(--success); font-weight: 700; }
     .hidden { display: none !important; }
   </style>
 
@@ -166,6 +182,7 @@
     let decryptedRecords = [];
     let editingRecordId = null;
 
+    // Cryptographic Engine
     async function deriveKey(passphrase, salt) {
       const enc = new TextEncoder();
       const baseKey = await crypto.subtle.importKey(
@@ -287,8 +304,8 @@
       const row = document.createElement("div");
       row.className = "field-pair";
       row.innerHTML = `
-        <input type="text" placeholder="Field Label (e.g. Card No, PIN, DOB)" value="${escapeQuotes(k)}" class="f-key" />
-        <input type="${isSecret ? 'password' : 'text'}" placeholder="Value / Secret" value="${escapeQuotes(v)}" class="f-val" />
+        <input type="text" placeholder="Field Naam (e.g. Card No, PIN, CVV, Policy No)" value="${escapeQuotes(k)}" class="f-key" />
+        <input type="${isSecret ? 'password' : 'text'}" placeholder="Field Value" value="${escapeQuotes(v)}" class="f-val" />
         <button type="button" class="danger sm" onclick="this.parentElement.remove()">✕</button>
       `;
       container.appendChild(row);
@@ -296,13 +313,13 @@
 
     window.openAddModal = () => {
       editingRecordId = null;
-      document.getElementById("formModalTitle").textContent = "Add New Custom Credential";
-      document.getElementById("recTitle").value = "";
-      document.getElementById("recCategory").value = "";
+      document.getElementById("formModalTitle").textContent = "Add Dynamic Entry";
+      document.getElementById("recGroup").value = "";
+      document.getElementById("recSubTitle").value = "";
       document.getElementById("recNotes").value = "";
       document.getElementById("dynamicFieldsBox").innerHTML = "";
       
-      // Default blank custom field
+      // Default blank field
       window.addDynamicFieldRow("", "");
 
       document.getElementById("formModal").classList.remove("hidden");
@@ -314,11 +331,13 @@
     };
 
     window.saveRecord = async () => {
-      const title = document.getElementById("recTitle").value.trim();
-      const category = document.getElementById("recCategory").value.trim() || "General";
+      const groupName = document.getElementById("recGroup").value.trim();
+      const subTitle = document.getElementById("recSubTitle").value.trim();
       const notes = document.getElementById("recNotes").value.trim();
 
-      if (!title) return alert("Title daalna zaroori hai!");
+      if (!groupName || !subTitle) {
+        return alert("Level 1 Header aur Level 2 Item Naam dono likhna zaroori hai!");
+      }
 
       const fieldPairs = [];
       const keys = document.querySelectorAll(".f-key");
@@ -341,8 +360,8 @@
         if (idx !== -1) {
           decryptedRecords[idx] = {
             id: editingRecordId,
-            title,
-            category,
+            groupName,
+            subTitle,
             notes,
             fields: fieldPairs,
             updatedAt: new Date().toISOString()
@@ -351,8 +370,8 @@
       } else {
         decryptedRecords.unshift({
           id: Date.now(),
-          title,
-          category,
+          groupName,
+          subTitle,
           notes,
           fields: fieldPairs,
           updatedAt: new Date().toISOString()
@@ -369,9 +388,9 @@
       if (!rec) return;
 
       editingRecordId = id;
-      document.getElementById("formModalTitle").textContent = "Edit Custom Credential";
-      document.getElementById("recTitle").value = rec.title || "";
-      document.getElementById("recCategory").value = rec.category || "";
+      document.getElementById("formModalTitle").textContent = "Edit Dynamic Entry";
+      document.getElementById("recGroup").value = rec.groupName || "";
+      document.getElementById("recSubTitle").value = rec.subTitle || "";
       document.getElementById("recNotes").value = rec.notes || "";
 
       const box = document.getElementById("dynamicFieldsBox");
@@ -389,7 +408,7 @@
     };
 
     window.deleteRecord = async (id) => {
-      if (confirm("Kya aap sach me is entry ko delete karna chahte hain?")) {
+      if (confirm("Kya aap is entry ko permanently delete karna chahte hain?")) {
         decryptedRecords = decryptedRecords.filter(r => r.id !== id);
         await syncCloud();
         renderVault();
@@ -412,6 +431,7 @@
       });
     }
 
+    // Dynamic Multi-Level Render & Partial Search
     window.renderVault = () => {
       const container = document.getElementById("vaultList");
       const query = (document.getElementById("searchQuery").value || "").trim().toLowerCase();
@@ -419,8 +439,8 @@
 
       const filtered = decryptedRecords.filter(r => {
         if (!query) return true;
-        if (r.title.toLowerCase().includes(query)) return true;
-        if (r.category.toLowerCase().includes(query)) return true;
+        if (r.groupName.toLowerCase().includes(query)) return true;
+        if (r.subTitle.toLowerCase().includes(query)) return true;
         if (r.notes && r.notes.toLowerCase().includes(query)) return true;
         return (r.fields || []).some(f => 
           f.key.toLowerCase().includes(query) || f.val.toLowerCase().includes(query)
@@ -428,47 +448,65 @@
       });
 
       if (filtered.length === 0) {
-        container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">No matching credentials found.</div>`;
+        container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">Koi record nahi mila.</div>`;
         return;
       }
 
+      // Group records by Level 1 Header
+      const groups = {};
       filtered.forEach(item => {
-        const div = document.createElement("div");
-        div.className = "vault-item";
+        const grp = item.groupName;
+        if (!groups[grp]) groups[grp] = [];
+        groups[grp].push(item);
+      });
 
-        let fieldsHtml = "";
-        (item.fields || []).forEach((f, idx) => {
-          const fid = `field_${item.id}_${idx}`;
-          const isHidden = f.isSecret;
-          fieldsHtml += `
-            <div class="data-row">
-              <span class="data-key">${escapeHtml(f.key)}:</span>
-              <div class="data-val-wrapper">
-                <span id="${fid}">${isHidden ? '••••••••' : escapeHtml(f.val)}</span>
-                ${isHidden ? `<span class="action-btn" onclick="toggleFieldMask('${fid}', '${escapeQuotes(f.val)}')">Show</span>` : ''}
-                <span class="action-btn" onclick="copyToClipboard('${escapeQuotes(f.val)}')">Copy</span>
+      // Render Level 1 > Level 2 > Level 3
+      Object.keys(groups).forEach(groupTitle => {
+        const groupBox = document.createElement("div");
+        groupBox.className = "group-box";
+
+        let subItemsHtml = "";
+        groups[groupTitle].forEach(sub => {
+          let fieldsHtml = "";
+          (sub.fields || []).forEach((f, idx) => {
+            const fid = `f_${sub.id}_${idx}`;
+            const isHidden = f.isSecret;
+            fieldsHtml += `
+              <div class="data-row">
+                <span class="data-key">${escapeHtml(f.key)}:</span>
+                <div class="data-val-wrapper">
+                  <span id="${fid}">${isHidden ? '••••••••' : escapeHtml(f.val)}</span>
+                  ${isHidden ? `<span class="action-btn" onclick="toggleFieldMask('${fid}', '${escapeQuotes(f.val)}')">Show</span>` : ''}
+                  <span class="action-btn" onclick="copyToClipboard('${escapeQuotes(f.val)}')">Copy</span>
+                </div>
               </div>
+            `;
+          });
+
+          subItemsHtml += `
+            <div class="subitem-card">
+              <div class="subitem-header">
+                <span class="subitem-title">${escapeHtml(sub.subTitle)}</span>
+                <div class="btn-row">
+                  <button class="secondary sm" onclick="editRecord(${sub.id})">Edit</button>
+                  <button class="danger sm" onclick="deleteRecord(${sub.id})">Delete</button>
+                </div>
+              </div>
+              <div class="fields-list">
+                ${fieldsHtml}
+              </div>
+              ${sub.notes ? `<div style="font-size:0.8rem; color:var(--muted); margin-top:8px; border-top:1px dashed var(--border); padding-top:6px;"><strong>Notes:</strong> ${escapeHtml(sub.notes)}</div>` : ''}
             </div>
           `;
         });
 
-        div.innerHTML = `
-          <div class="item-header">
-            <div>
-              <span class="item-title">${escapeHtml(item.title)}</span>
-              <span class="item-category">${escapeHtml(item.category)}</span>
-            </div>
-            <div class="btn-row">
-              <button class="secondary sm" onclick="editRecord(${item.id})">Edit</button>
-              <button class="danger sm" onclick="deleteRecord(${item.id})">Delete</button>
-            </div>
+        groupBox.innerHTML = `
+          <div class="group-header">
+            <span>📁 ${escapeHtml(groupTitle)}</span>
           </div>
-          <div class="data-grid">
-            ${fieldsHtml}
-          </div>
-          ${item.notes ? `<div style="font-size:0.8rem; color:var(--muted); margin-top:6px; border-top:1px dashed var(--border); padding-top:6px;"><strong>Note:</strong> ${escapeHtml(item.notes)}</div>` : ''}
+          ${subItemsHtml}
         `;
-        container.appendChild(div);
+        container.appendChild(groupBox);
       });
     };
 
@@ -478,7 +516,7 @@
     };
 
     window.copyToClipboard = (txt) => {
-      navigator.clipboard.writeText(txt).then(() => alert("Copied to clipboard!"));
+      navigator.clipboard.writeText(txt).then(() => alert("Copied!"));
     };
 
     window.lockVault = () => {
@@ -502,8 +540,9 @@
 
 <div class="app-container">
 
+  <!-- STEP 1: AUTH -->
   <div id="viewAuth" class="card">
-    <h1>🛡️ OmniVault Access</h1>
+    <h1>🛡️ OmniVault Multi-Level</h1>
     <p>Apne authorized email se sign-in karein.</p>
     <label>Email</label>
     <input type="email" id="loginEmail" placeholder="your-email@gmail.com" />
@@ -512,21 +551,24 @@
     <button onclick="handleLogin()">Sign In to Cloud</button>
   </div>
 
+  <!-- STEP 2: MASTER DECRYPTION -->
   <div id="viewMasterKey" class="card hidden">
     <h1>🔐 Master Passphrase</h1>
-    <p>Database me data encrypted hai. Access karne ke liye apni Master Key daalein.</p>
+    <p>Data zero-knowledge encrypted hai. Unlock karne ke liye Master Key enter karein.</p>
     <label>Master Passphrase</label>
-    <input type="password" id="masterPassInput" placeholder="Enter Master Key (Never stored in cloud)..." />
+    <input type="password" id="masterPassInput" placeholder="Enter Master Key..." />
     <div class="btn-row">
       <button onclick="unlockVault()">Decrypt & Sync</button>
       <button class="secondary" onclick="handleLogout()">Sign Out</button>
     </div>
   </div>
 
+  <!-- STEP 3: MAIN VIEW -->
   <div id="viewVault" class="hidden">
+    
     <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
       <div>
-        <span class="status-badge">● AES-256 E2EE ACTIVE</span>
+        <span class="status-badge">● 3-LEVEL E2EE ACTIVE</span>
       </div>
       <div class="btn-row">
         <button class="sm secondary" onclick="lockVault()">Lock</button>
@@ -534,26 +576,28 @@
       </div>
     </div>
 
+    <!-- Search & New Entry Trigger -->
     <div class="card">
-      <div style="display:flex; gap:8px; margin-bottom:0;">
+      <div style="display:flex; gap:8px; align-items:center;">
         <div class="search-container" style="flex:1;">
           <span class="search-icon">🔍</span>
-          <input type="text" id="searchQuery" placeholder="Search anything (Policy, Card, Name, Field Label, Note)..." oninput="renderVault()" />
+          <input type="text" id="searchQuery" placeholder="Search across all headers, items, fields..." oninput="renderVault()" />
         </div>
         <button onclick="openAddModal()" style="white-space:nowrap; height:42px;">+ Add New</button>
       </div>
     </div>
 
+    <!-- DYNAMIC FORM MODAL -->
     <div id="formModal" class="card hidden" style="border: 1px solid var(--primary);">
-      <h2 id="formModalTitle">Add New Custom Credential</h2>
+      <h2 id="formModalTitle">Add Dynamic Entry</h2>
       
-      <label>Title / Identifier</label>
-      <input type="text" id="recTitle" placeholder="e.g. HDFC Credit Card, LIC Jeevan Labh, GST Portal" />
+      <label>1. Main Header / Folder Naam (Kiska hai?)</label>
+      <input type="text" id="recGroup" placeholder="e.g. LIC Policies, HDFC Bank, Medical Store Portals, Personal IDs" />
 
-      <label>Category / Folder (Optional)</label>
-      <input type="text" id="recCategory" placeholder="e.g. Banking, Insurance, Pharmacy, Tech" />
+      <label>2. Item / Sub-Title Naam (Uske andar kya chiz hai?)</label>
+      <input type="text" id="recSubTitle" placeholder="e.g. Jeevan Labh Policy, NetBanking, GST Login, Pan Card" />
 
-      <label>Custom Dynamic Fields</label>
+      <label>3. Fields & Details (Uske andar kya-kya hai?)</label>
       <div id="dynamicFieldsBox"></div>
       
       <div class="btn-row" style="margin-bottom:14px;">
@@ -561,8 +605,8 @@
         <button type="button" class="secondary sm" onclick="addDynamicFieldRow('', '', true)">+ Add Hidden/Secret Field</button>
       </div>
 
-      <label>Notes / Additional Details</label>
-      <textarea id="recNotes" rows="2" placeholder="Renewal dates, agent number, security answers..."></textarea>
+      <label>Notes / Extra Info (Optional)</label>
+      <textarea id="recNotes" rows="2" placeholder="Renewal dates, customer care number, extra instructions..."></textarea>
 
       <div class="btn-row">
         <button onclick="saveRecord()">Save Encrypted</button>
@@ -570,7 +614,9 @@
       </div>
     </div>
 
+    <!-- RENDER LIST -->
     <div id="vaultList"></div>
+
   </div>
 
 </div>
