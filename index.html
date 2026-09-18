@@ -278,7 +278,7 @@
     let activePersonIdx = 0;
     let openFolders = {};
 
-    // --- BASE64 HELPER (Guarantees perfect cross-device serialization) ---
+    // --- BASE64 HELPER (Cross-device 100% loss-free serialization) ---
     function u8ToBase64(u8) {
       let binary = "";
       for (let i = 0; i < u8.length; i++) binary += String.fromCharCode(u8[i]);
@@ -292,12 +292,13 @@
       return bytes;
     }
 
-    // --- CRYPTO (PBKDF2 + AES-GCM 256) ---
-    async function deriveKey(pass, saltU8) {
+    // --- DETERMINISTIC KEY DERIVATION (Exact match across all devices) ---
+    async function deriveKey(pass, uid) {
       const enc = new TextEncoder();
+      const saltBuffer = await crypto.subtle.digest("SHA-256", enc.encode("OMNIVAULT_FIXED_SALT_" + uid));
       const baseKey = await crypto.subtle.importKey("raw", enc.encode(pass), { name: "PBKDF2" }, false, ["deriveKey"]);
       return crypto.subtle.deriveKey(
-        { name: "PBKDF2", salt: saltU8, iterations: 100000, hash: "SHA-256" },
+        { name: "PBKDF2", salt: new Uint8Array(saltBuffer), iterations: 100000, hash: "SHA-256" },
         baseKey,
         { name: "AES-GCM", length: 256 },
         false,
@@ -336,7 +337,7 @@
       }
     });
 
-    // --- LIVE SYNC WITHOUT REFRESH / BUTTON ---
+    // --- REALTIME LIVE SYNC (NO REFRESH / NO BUTTON) ---
     function listenCloud(uid) {
       const ref = doc(db, "vaults", uid);
       onSnapshot(ref, async (snap) => {
@@ -344,11 +345,10 @@
           cloudPayload = snap.data();
           if (masterCryptoKey && cloudPayload.cipher && cloudPayload.iv) {
             try {
-              // Realtime live decrypt on incoming changes from ANY device
               vaultData = await decryptPayload(cloudPayload.cipher, cloudPayload.iv, masterCryptoKey);
               renderApp();
             } catch(e) {
-              console.error("Auto live-sync decrypt failed", e);
+              console.error("Live-sync decrypt failed", e);
             }
           }
         }
@@ -362,40 +362,32 @@
       catch (err) { alert(err.message); }
     };
 
-    // --- MULTI-DEVICE INSTANT UNLOCK ---
+    // --- UNLOCK VAULT ---
     window.unlockVault = async () => {
       const pass = document.getElementById("masterInput").value.trim();
       if (!pass) return alert("Master key daalein!");
 
-      // Make sure we have cloud doc directly if onSnapshot hasn't fired yet
       if (!cloudPayload && currentUser) {
         try {
           const snap = await getDoc(doc(db, "vaults", currentUser.uid));
           if (snap.exists()) cloudPayload = snap.data();
         } catch (e) {
-          console.error("Direct fetch failed", e);
+          console.error("Fetch failed", e);
         }
       }
 
       try {
-        let saltU8;
-        if (cloudPayload && cloudPayload.salt) {
-          saltU8 = base64ToU8(cloudPayload.salt);
-        } else {
-          saltU8 = crypto.getRandomValues(new Uint8Array(16));
-        }
-
-        const derived = await deriveKey(pass, saltU8);
+        const derived = await deriveKey(pass, currentUser.uid);
 
         if (cloudPayload && cloudPayload.cipher && cloudPayload.iv) {
           try {
             vaultData = await decryptPayload(cloudPayload.cipher, cloudPayload.iv, derived);
           } catch(e) {
-            alert("Galat Master Key! Caps-Lock ya space check karein.");
+            alert("Galat Master Key! Check karein Caps Lock on toh nahi hai.");
             return;
           }
         } else {
-          // Default baseline
+          // Fresh template agar cloud khali ho
           vaultData = [
             {
               id: Date.now(),
@@ -672,19 +664,14 @@
       }
     };
 
-    // --- ENCRYPT & PUSH DIRECT TO CLOUD ---
+    // --- ENCRYPT & REALTIME SAVE TO FIRESTORE ---
     async function syncCloud() {
       if (!currentUser || !masterCryptoKey) return;
       const encrypted = await encryptPayload(vaultData, masterCryptoKey);
-      
-      let saltBase64 = (cloudPayload && cloudPayload.salt) 
-        ? cloudPayload.salt 
-        : u8ToBase64(crypto.getRandomValues(new Uint8Array(16)));
 
       const payloadToSave = {
         iv: encrypted.iv,
         cipher: encrypted.cipher,
-        salt: saltBase64,
         lastModified: new Date().toISOString()
       };
 
@@ -712,7 +699,7 @@
         const text = await file.text();
         try {
           const parsed = JSON.parse(text);
-          if (parsed.cipher && parsed.iv && parsed.salt) {
+          if (parsed.cipher && parsed.iv) {
             if (confirm("Backup restore karna hai? Purana cloud data overwrite ho jayega.")) {
               await setDoc(doc(db, "vaults", currentUser.uid), parsed);
               alert("Backup Restored! Page refresh ho raha hai.");
@@ -761,7 +748,7 @@
   <!-- SCREEN 2: MASTER KEY -->
   <div id="screenMaster" class="hidden" style="padding:24px; max-width:400px; margin: 50px auto;">
     <h2 style="color:var(--primary); margin-bottom:12px;">🔐 Unlock Vault</h2>
-    <p style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">Zero-Knowledge Client-Side Decryption.</p>
+    <p style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">Deterministic Client-Side AES-256 Decryption.</p>
     <label>Master Passphrase</label>
     <input type="password" id="masterInput" placeholder="Master Key..." />
     <button class="btn btn-primary" style="width:100%;" onclick="unlockVault()">Decrypt</button>
