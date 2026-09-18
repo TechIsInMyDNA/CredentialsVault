@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>OmniVault - Encrypted Multi-Device Vault</title>
+  <title>OmniVault - Dynamic Encrypted Vault</title>
   <style>
     :root {
       --bg: #090d16;
@@ -69,11 +69,11 @@
     button.secondary { background: #1e293b; color: #cbd5e1; border: 1px solid var(--border); }
     button.secondary:hover { background: #334155; }
     button.danger { background: var(--danger); color: #fff; }
-    button.sm { padding: 5px 10px; font-size: 0.78rem; }
+    button.sm { padding: 6px 12px; font-size: 0.8rem; }
 
     .field-pair {
       display: grid;
-      grid-template-columns: 1fr 1.2fr auto;
+      grid-template-columns: 1fr 1.3fr auto;
       gap: 8px;
       margin-bottom: 8px;
       align-items: center;
@@ -287,8 +287,8 @@
       const row = document.createElement("div");
       row.className = "field-pair";
       row.innerHTML = `
-        <input type="text" placeholder="Field (e.g. CVV, Policy No, PIN)" value="${escapeQuotes(k)}" class="f-key" />
-        <input type="${isSecret ? 'password' : 'text'}" placeholder="Value" value="${escapeQuotes(v)}" class="f-val" />
+        <input type="text" placeholder="Field Label (e.g. Card No, PIN, DOB)" value="${escapeQuotes(k)}" class="f-key" />
+        <input type="${isSecret ? 'password' : 'text'}" placeholder="Value / Secret" value="${escapeQuotes(v)}" class="f-val" />
         <button type="button" class="danger sm" onclick="this.parentElement.remove()">✕</button>
       `;
       container.appendChild(row);
@@ -296,14 +296,14 @@
 
     window.openAddModal = () => {
       editingRecordId = null;
-      document.getElementById("formModalTitle").textContent = "Add New Entry";
+      document.getElementById("formModalTitle").textContent = "Add New Custom Credential";
       document.getElementById("recTitle").value = "";
       document.getElementById("recCategory").value = "";
       document.getElementById("recNotes").value = "";
       document.getElementById("dynamicFieldsBox").innerHTML = "";
       
-      window.addDynamicFieldRow("Card / User Number", "");
-      window.addDynamicFieldRow("Password / PIN", "", true);
+      // Default blank custom field
+      window.addDynamicFieldRow("", "");
 
       document.getElementById("formModal").classList.remove("hidden");
       document.getElementById("formModal").scrollIntoView({ behavior: 'smooth' });
@@ -329,7 +329,7 @@
         const v = vals[i].value.trim();
         if (k || v) {
           fieldPairs.push({
-            key: k,
+            key: k || "Detail",
             val: v,
             isSecret: vals[i].type === "password"
           });
@@ -369,23 +369,27 @@
       if (!rec) return;
 
       editingRecordId = id;
-      document.getElementById("formModalTitle").textContent = "Edit Entry";
+      document.getElementById("formModalTitle").textContent = "Edit Custom Credential";
       document.getElementById("recTitle").value = rec.title || "";
       document.getElementById("recCategory").value = rec.category || "";
       document.getElementById("recNotes").value = rec.notes || "";
 
       const box = document.getElementById("dynamicFieldsBox");
       box.innerHTML = "";
-      (rec.fields || []).forEach(f => {
-        window.addDynamicFieldRow(f.key, f.val, f.isSecret);
-      });
+      if (rec.fields && rec.fields.length > 0) {
+        rec.fields.forEach(f => {
+          window.addDynamicFieldRow(f.key, f.val, f.isSecret);
+        });
+      } else {
+        window.addDynamicFieldRow("", "");
+      }
 
       document.getElementById("formModal").classList.remove("hidden");
       document.getElementById("formModal").scrollIntoView({ behavior: 'smooth' });
     };
 
     window.deleteRecord = async (id) => {
-      if (confirm("Permanently delete karna hai?")) {
+      if (confirm("Kya aap sach me is entry ko delete karna chahte hain?")) {
         decryptedRecords = decryptedRecords.filter(r => r.id !== id);
         await syncCloud();
         renderVault();
@@ -534,34 +538,34 @@
       <div style="display:flex; gap:8px; margin-bottom:0;">
         <div class="search-container" style="flex:1;">
           <span class="search-icon">🔍</span>
-          <input type="text" id="searchQuery" placeholder="Partial search (Card, LIC, Policy, Name, Note)..." oninput="renderVault()" />
+          <input type="text" id="searchQuery" placeholder="Search anything (Policy, Card, Name, Field Label, Note)..." oninput="renderVault()" />
         </div>
         <button onclick="openAddModal()" style="white-space:nowrap; height:42px;">+ Add New</button>
       </div>
     </div>
 
     <div id="formModal" class="card hidden" style="border: 1px solid var(--primary);">
-      <h2 id="formModalTitle">Add New Entry</h2>
+      <h2 id="formModalTitle">Add New Custom Credential</h2>
       
-      <label>Title / Name</label>
-      <input type="text" id="recTitle" placeholder="e.g. HDFC Regalia, LIC Policy, GST Portal" />
+      <label>Title / Identifier</label>
+      <input type="text" id="recTitle" placeholder="e.g. HDFC Credit Card, LIC Jeevan Labh, GST Portal" />
 
-      <label>Category (Optional)</label>
-      <input type="text" id="recCategory" placeholder="e.g. Banking, Insurance, Pharmacy, Personal" />
+      <label>Category / Folder (Optional)</label>
+      <input type="text" id="recCategory" placeholder="e.g. Banking, Insurance, Pharmacy, Tech" />
 
-      <label>Custom Data Fields</label>
+      <label>Custom Dynamic Fields</label>
       <div id="dynamicFieldsBox"></div>
       
       <div class="btn-row" style="margin-bottom:14px;">
-        <button type="button" class="secondary sm" onclick="addDynamicFieldRow('', '')">+ Add Normal Field</button>
+        <button type="button" class="secondary sm" onclick="addDynamicFieldRow('', '')">+ Add Text Field</button>
         <button type="button" class="secondary sm" onclick="addDynamicFieldRow('', '', true)">+ Add Hidden/Secret Field</button>
       </div>
 
-      <label>Notes / Recovery Details</label>
+      <label>Notes / Additional Details</label>
       <textarea id="recNotes" rows="2" placeholder="Renewal dates, agent number, security answers..."></textarea>
 
       <div class="btn-row">
-        <button onclick="saveRecord()">Save & Encrypt</button>
+        <button onclick="saveRecord()">Save Encrypted</button>
         <button class="secondary" onclick="closeFormModal()">Cancel</button>
       </div>
     </div>
