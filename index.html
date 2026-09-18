@@ -3,16 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>OmniVault - Family & Entity Dynamic Manager</title>
+  <title>OmniVault - Explorer & Excel Matrix</title>
   <style>
     :root {
-      --bg: #080c14;
-      --card: #111927;
-      --sub-card: #0c121d;
-      --border: #1e293b;
+      --bg: #090d16;
+      --card: #121927;
+      --folder-card: #0c121e;
+      --border: #202d42;
       --primary: #38bdf8;
       --primary-hover: #0284c7;
       --accent: #a855f7;
+      --folder-color: #f59e0b;
       --text: #f8fafc;
       --muted: #94a3b8;
       --danger: #ef4444;
@@ -21,7 +22,7 @@
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background: var(--bg); color: var(--text); padding: 14px; min-height: 100vh; display: flex; justify-content: center; }
-    .container { width: 100%; max-width: 820px; }
+    .container { width: 100%; max-width: 900px; }
 
     .card {
       background: var(--card);
@@ -39,7 +40,7 @@
     input, textarea {
       width: 100%;
       padding: 9px 12px;
-      background: #06090f;
+      background: #060910;
       border: 1px solid var(--border);
       border-radius: 6px;
       color: #fff;
@@ -67,9 +68,10 @@
     button.secondary:hover { background: #334155; }
     button.danger { background: var(--danger); color: #fff; }
     button.accent { background: var(--accent); color: #fff; }
+    button.folder { background: #1e293b; color: var(--folder-color); border: 1px solid #334155; }
     button.sm { padding: 4px 8px; font-size: 0.75rem; }
 
-    /* PERSON SECTION (LEVEL 1) */
+    /* LEVEL 1: PERSON / DIRECTORY */
     .person-card {
       background: var(--card);
       border: 1px solid var(--border);
@@ -83,51 +85,87 @@
       align-items: center;
       border-bottom: 2px solid var(--border);
       padding-bottom: 8px;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
     }
-    .person-name {
+    .person-title {
       font-size: 1.15rem;
       font-weight: 800;
       color: var(--accent);
       display: flex;
       align-items: center;
       gap: 8px;
+      letter-spacing: 0.5px;
     }
 
-    /* ACCOUNT / SERVICE BOX (LEVEL 2) */
-    .service-box {
-      background: var(--sub-card);
+    /* LEVEL 2: CATEGORY / FOLDER ACCORDION */
+    .folder-box {
+      background: var(--folder-card);
       border: 1px solid var(--border);
-      border-radius: 9px;
-      padding: 12px;
+      border-radius: 8px;
       margin-bottom: 10px;
+      overflow: hidden;
     }
-    .service-header {
+    .folder-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 8px;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-      padding-bottom: 6px;
+      padding: 10px 14px;
+      background: rgba(255,255,255,0.02);
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
     }
-    .service-title { font-size: 0.95rem; font-weight: 700; color: var(--primary); }
+    .folder-name {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--folder-color);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .folder-content {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
 
-    /* DYNAMIC FIELDS (LEVEL 3) */
-    .fields-list { display: flex; flex-direction: column; gap: 5px; }
-    .data-row {
+    /* LEVEL 3: EXCEL ITEM CARD & DYNAMIC CELLS */
+    .item-card {
+      background: #080c14;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .item-top {
       display: flex;
       justify-content: space-between;
-      font-size: 0.85rem;
-      padding: 5px 8px;
-      border-radius: 5px;
-      background: rgba(255,255,255,0.02);
+      align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      padding-bottom: 6px;
+      margin-bottom: 8px;
     }
-    .data-label { color: var(--muted); font-weight: 600; }
-    .data-value-group { display: flex; align-items: center; gap: 8px; max-width: 65%; word-break: break-all; text-align: right; }
-    .copy-btn { color: var(--primary); cursor: pointer; font-size: 0.78rem; }
-    .copy-btn:hover { text-decoration: underline; }
+    .item-name { font-size: 0.95rem; font-weight: 700; color: var(--primary); }
 
-    /* MODAL DYNAMIC ROW */
+    .fields-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 6px;
+    }
+    .cell-box {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      padding: 6px 8px;
+      border-radius: 5px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .cell-label { font-size: 0.72rem; color: var(--muted); font-weight: 600; text-transform: uppercase; margin-bottom: 2px; }
+    .cell-val-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; }
+    .cell-action { color: var(--primary); cursor: pointer; font-size: 0.75rem; margin-left: 6px; }
+    .cell-action:hover { text-decoration: underline; }
+
+    /* DYNAMIC FIELDS CREATION IN MODAL */
     .field-pair {
       display: grid;
       grid-template-columns: 1fr 1.3fr auto;
@@ -164,11 +202,13 @@
     let currentUser = null;
     let cloudRawPayload = null;
     let masterCryptoKey = null;
-    let vaultData = []; // Array of Person records
-    let editingPersonIndex = null;
-    let editingItemIndex = null;
+    let vaultData = []; 
 
-    // --- CRYPTO (AES-256-GCM + PBKDF2) ---
+    let curPIdx = null;
+    let curFIdx = null;
+    let curIIdx = null;
+
+    // --- CRYPTO (AES-GCM-256 + PBKDF2) ---
     async function deriveKey(passphrase, salt) {
       const enc = new TextEncoder();
       const baseKey = await crypto.subtle.importKey("raw", enc.encode(passphrase), { name: "PBKDF2" }, false, ["deriveKey"]);
@@ -275,52 +315,75 @@
       }
     };
 
-    // --- PERSON ACTIONS (LEVEL 1) ---
-    window.addNewPerson = async () => {
-      const name = prompt("Kiska naam add karna hai? (e.g. Mera, Pappa, Mummy, Medical Store):");
+    // LEVEL 1: PERSON OPERATIONS
+    window.addPersonPrompt = async () => {
+      const name = prompt("Person / Entity Name (e.g. SHUBHAM AGRAWAL, PRACHI AGRAWAL):");
       if (!name || !name.trim()) return;
-      vaultData.unshift({
+      vaultData.push({
         id: Date.now(),
-        personName: name.trim(),
-        items: []
+        name: name.trim(),
+        folders: []
       });
       await syncCloud();
       renderVault();
     };
 
     window.deletePerson = async (pIdx) => {
-      if (confirm(`Kya aap "${vaultData[pIdx].personName}" aur unka saara data delete karna chahte hain?`)) {
+      if (confirm(`Delete "${vaultData[pIdx].name}" and all categories inside?`)) {
         vaultData.splice(pIdx, 1);
         await syncCloud();
         renderVault();
       }
     };
 
-    // --- ITEM ACTIONS (LEVEL 2) ---
-    window.openAddItemModal = (pIdx) => {
-      editingPersonIndex = pIdx;
-      editingItemIndex = null;
+    // LEVEL 2: FOLDER OPERATIONS
+    window.addFolderPrompt = async (pIdx) => {
+      const fName = prompt(`Folder Category for ${vaultData[pIdx].name} (e.g. SAVING ACCOUNTS, ALL CARDS, INSURANCE):`);
+      if (!fName || !fName.trim()) return;
+      vaultData[pIdx].folders.push({
+        id: Date.now(),
+        name: fName.trim().toUpperCase(),
+        items: []
+      });
+      await syncCloud();
+      renderVault();
+    };
 
-      document.getElementById("itemModalTitle").textContent = `Add in ${vaultData[pIdx].personName}`;
-      document.getElementById("serviceTitleInput").value = "";
-      document.getElementById("serviceNotesInput").value = "";
+    window.deleteFolder = async (pIdx, fIdx) => {
+      if (confirm(`Delete folder "${vaultData[pIdx].folders[fIdx].name}"?`)) {
+        vaultData[pIdx].folders.splice(fIdx, 1);
+        await syncCloud();
+        renderVault();
+      }
+    };
+
+    // LEVEL 3: DYNAMIC EXCEL ITEM OPERATIONS
+    window.openAddItemModal = (pIdx, fIdx) => {
+      curPIdx = pIdx;
+      curFIdx = fIdx;
+      curIIdx = null;
+
+      document.getElementById("itemModalTitle").textContent = `Add in ${vaultData[pIdx].folders[fIdx].name}`;
+      document.getElementById("itemTitleInput").value = "";
+      document.getElementById("itemNotesInput").value = "";
       document.getElementById("dynamicFieldsBox").innerHTML = "";
 
-      // Default empty field
-      window.addDynamicFieldRow("", "");
+      window.addDynamicFieldRow("Account / Card No", "");
+      window.addDynamicFieldRow("PIN / Password", "", true);
 
       document.getElementById("itemModal").classList.remove("hidden");
       document.getElementById("itemModal").scrollIntoView({ behavior: 'smooth' });
     };
 
-    window.editItem = (pIdx, iIdx) => {
-      editingPersonIndex = pIdx;
-      editingItemIndex = iIdx;
+    window.editItem = (pIdx, fIdx, iIdx) => {
+      curPIdx = pIdx;
+      curFIdx = fIdx;
+      curIIdx = iIdx;
 
-      const item = vaultData[pIdx].items[iIdx];
-      document.getElementById("itemModalTitle").textContent = `Edit in ${vaultData[pIdx].personName}`;
-      document.getElementById("serviceTitleInput").value = item.title || "";
-      document.getElementById("serviceNotesInput").value = item.notes || "";
+      const item = vaultData[pIdx].folders[fIdx].items[iIdx];
+      document.getElementById("itemModalTitle").textContent = `Edit in ${vaultData[pIdx].folders[fIdx].name}`;
+      document.getElementById("itemTitleInput").value = item.title || "";
+      document.getElementById("itemNotesInput").value = item.notes || "";
 
       const box = document.getElementById("dynamicFieldsBox");
       box.innerHTML = "";
@@ -332,9 +395,9 @@
       document.getElementById("itemModal").scrollIntoView({ behavior: 'smooth' });
     };
 
-    window.deleteItem = async (pIdx, iIdx) => {
-      if (confirm("Ise delete karna hai?")) {
-        vaultData[pIdx].items.splice(iIdx, 1);
+    window.deleteItem = async (pIdx, fIdx, iIdx) => {
+      if (confirm("Delete this entry?")) {
+        vaultData[pIdx].folders[fIdx].items.splice(iIdx, 1);
         await syncCloud();
         renderVault();
       }
@@ -349,18 +412,18 @@
       const row = document.createElement("div");
       row.className = "field-pair";
       row.innerHTML = `
-        <input type="text" placeholder="Detail Label (Card No, Policy No, PIN, Expiry)" value="${escapeQuotes(k)}" class="f-key" />
-        <input type="${isSecret ? 'password' : 'text'}" placeholder="Value / Secret" value="${escapeQuotes(v)}" class="f-val" />
+        <input type="text" placeholder="Cell Column (e.g. CVV, Nominee, IFSC, Policy)" value="${escapeQuotes(k)}" class="f-key" />
+        <input type="${isSecret ? 'password' : 'text'}" placeholder="Value" value="${escapeQuotes(v)}" class="f-val" />
         <button type="button" class="danger sm" onclick="this.parentElement.remove()">✕</button>
       `;
       container.appendChild(row);
     };
 
     window.saveItem = async () => {
-      const title = document.getElementById("serviceTitleInput").value.trim();
-      const notes = document.getElementById("serviceNotesInput").value.trim();
+      const title = document.getElementById("itemTitleInput").value.trim();
+      const notes = document.getElementById("itemNotesInput").value.trim();
 
-      if (!title) return alert("Account / Service ka title daalein!");
+      if (!title) return alert("Title daalna zaroori hai (e.g. SBI Saving, HDFC Regalia, LIC)!");
 
       const fieldPairs = [];
       const keys = document.querySelectorAll(".f-key");
@@ -379,16 +442,16 @@
       }
 
       const itemObj = {
-        id: editingItemIndex !== null ? vaultData[editingPersonIndex].items[editingItemIndex].id : Date.now(),
+        id: curIIdx !== null ? vaultData[curPIdx].folders[curFIdx].items[curIIdx].id : Date.now(),
         title,
         notes,
         fields: fieldPairs
       };
 
-      if (editingItemIndex !== null) {
-        vaultData[editingPersonIndex].items[editingItemIndex] = itemObj;
+      if (curIIdx !== null) {
+        vaultData[curPIdx].folders[curFIdx].items[curIIdx] = itemObj;
       } else {
-        vaultData[editingPersonIndex].items.unshift(itemObj);
+        vaultData[curPIdx].folders[curFIdx].items.unshift(itemObj);
       }
 
       await syncCloud();
@@ -412,88 +475,113 @@
       });
     }
 
-    // --- RENDER & UNIVERSAL SEARCH ---
+    // --- RENDER & UNIVERSAL INSTANT SEARCH ---
     window.renderVault = () => {
       const container = document.getElementById("vaultList");
       const query = (document.getElementById("searchQuery").value || "").trim().toLowerCase();
       container.innerHTML = "";
 
       if (vaultData.length === 0) {
-        container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">Vault khali hai. Upar "+ Add Person / Entity" dabakar start karein.</div>`;
+        container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">Vault empty hai. Upar "+ Add Person" dabayein (e.g. SHUBHAM AGRAWAL).</div>`;
         return;
       }
 
       let hasMatch = false;
 
       vaultData.forEach((person, pIdx) => {
-        // Check match on Person name
-        const matchPerson = person.personName.toLowerCase().includes(query);
+        const matchPerson = person.name.toLowerCase().includes(query);
 
-        // Filter items under this person
-        const matchingItems = (person.items || []).filter(item => {
-          if (!query || matchPerson) return true;
-          if (item.title.toLowerCase().includes(query)) return true;
-          if (item.notes && item.notes.toLowerCase().includes(query)) return true;
-          return (item.fields || []).some(f => 
-            f.key.toLowerCase().includes(query) || f.val.toLowerCase().includes(query)
-          );
-        });
+        // Filter folders
+        let foldersHtml = "";
+        (person.folders || []).forEach((folder, fIdx) => {
+          const matchFolder = folder.name.toLowerCase().includes(query);
 
-        if (query && !matchPerson && matchingItems.length === 0) {
-          return;
-        }
+          const matchingItems = (folder.items || []).filter(item => {
+            if (!query || matchPerson || matchFolder) return true;
+            if (item.title.toLowerCase().includes(query)) return true;
+            if (item.notes && item.notes.toLowerCase().includes(query)) return true;
+            return (item.fields || []).some(f => 
+              f.key.toLowerCase().includes(query) || f.val.toLowerCase().includes(query)
+            );
+          });
 
-        hasMatch = true;
-        const pCard = document.createElement("div");
-        pCard.className = "person-card";
+          if (query && !matchPerson && !matchFolder && matchingItems.length === 0) {
+            return;
+          }
 
-        let itemsHtml = "";
-        matchingItems.forEach((item, itemActualIdx) => {
-          // Find actual index in original array
-          const realIdx = person.items.findIndex(i => i.id === item.id);
+          let itemsHtml = "";
+          matchingItems.forEach((item) => {
+            const realIIdx = folder.items.findIndex(i => i.id === item.id);
 
-          let fieldsHtml = "";
-          (item.fields || []).forEach((f, fIdx) => {
-            const fid = `f_${item.id}_${fIdx}`;
-            const isHidden = f.isSecret;
-            fieldsHtml += `
-              <div class="data-row">
-                <span class="data-label">${escapeHtml(f.key)}:</span>
-                <div class="data-value-group">
-                  <span id="${fid}">${isHidden ? '••••••••' : escapeHtml(f.val)}</span>
-                  ${isHidden ? `<span class="copy-btn" onclick="toggleFieldMask('${fid}', '${escapeQuotes(f.val)}')">Show</span>` : ''}
-                  <span class="copy-btn" onclick="copyValue('${escapeQuotes(f.val)}')">Copy</span>
+            let cellsHtml = "";
+            (item.fields || []).forEach((f, cIdx) => {
+              const cid = `c_${item.id}_${cIdx}`;
+              const isHidden = f.isSecret;
+              cellsHtml += `
+                <div class="cell-box">
+                  <div class="cell-label">${escapeHtml(f.key)}</div>
+                  <div class="cell-val-row">
+                    <span id="${cid}" style="font-family: ${isHidden ? 'monospace' : 'inherit'}; font-weight: 500;">
+                      ${isHidden ? '••••••••' : escapeHtml(f.val)}
+                    </span>
+                    <div>
+                      ${isHidden ? `<span class="cell-action" onclick="toggleMask('${cid}', '${escapeQuotes(f.val)}')">Show</span>` : ''}
+                      <span class="cell-action" onclick="copyValue('${escapeQuotes(f.val)}')">Copy</span>
+                    </div>
+                  </div>
                 </div>
+              `;
+            });
+
+            itemsHtml += `
+              <div class="item-card">
+                <div class="item-top">
+                  <span class="item-name">${escapeHtml(item.title)}</span>
+                  <div class="btn-row">
+                    <button class="secondary sm" onclick="editItem(${pIdx}, ${fIdx}, ${realIIdx})">Edit</button>
+                    <button class="danger sm" onclick="deleteItem(${pIdx}, ${fIdx}, ${realIIdx})">Delete</button>
+                  </div>
+                </div>
+                <div class="fields-grid">${cellsHtml}</div>
+                ${item.notes ? `<div style="font-size:0.78rem; color:var(--muted); margin-top:8px; border-top:1px dashed var(--border); padding-top:4px;"><strong>Note:</strong> ${escapeHtml(item.notes)}</div>` : ''}
               </div>
             `;
           });
 
-          itemsHtml += `
-            <div class="service-box">
-              <div class="service-header">
-                <span class="service-title">${escapeHtml(item.title)}</span>
+          foldersHtml += `
+            <div class="folder-box">
+              <div class="folder-header">
+                <span class="folder-name">📁 ${escapeHtml(folder.name)}</span>
                 <div class="btn-row">
-                  <button class="secondary sm" onclick="editItem(${pIdx}, ${realIdx})">Edit</button>
-                  <button class="danger sm" onclick="deleteItem(${pIdx}, ${realIdx})">Delete</button>
+                  <button class="sm secondary" onclick="openAddItemModal(${pIdx}, ${fIdx})">+ Add Record</button>
+                  <button class="sm danger" onclick="deleteFolder(${pIdx}, ${fIdx})">Delete Folder</button>
                 </div>
               </div>
-              <div class="fields-list">${fieldsHtml}</div>
-              ${item.notes ? `<div style="font-size:0.8rem; color:var(--muted); margin-top:8px; border-top:1px dashed var(--border); padding-top:6px;"><strong>Note:</strong> ${escapeHtml(item.notes)}</div>` : ''}
+              <div class="folder-content">
+                ${itemsHtml || '<div style="color:var(--muted); font-size:0.8rem;">Khali folder hai. "+ Add Record" par click karein.</div>'}
+              </div>
             </div>
           `;
         });
 
-        pCard.innerHTML = `
+        if (query && !matchPerson && foldersHtml === "") {
+          return;
+        }
+
+        hasMatch = true;
+        const pDiv = document.createElement("div");
+        pDiv.className = "person-card";
+        pDiv.innerHTML = `
           <div class="person-header">
-            <span class="person-name">👤 ${escapeHtml(person.personName)}</span>
+            <span class="person-title">👤 ${escapeHtml(person.name)}</span>
             <div class="btn-row">
-              <button class="sm accent" onclick="openAddItemModal(${pIdx})">+ Add Account/Detail</button>
-              <button class="danger sm" onclick="deletePerson(${pIdx})">Delete Person</button>
+              <button class="sm folder" onclick="addFolderPrompt(${pIdx})">+ Add Folder Category</button>
+              <button class="sm danger" onclick="deletePerson(${pIdx})">Delete Person</button>
             </div>
           </div>
-          <div>${itemsHtml || '<div style="color:var(--muted); font-size:0.85rem; padding:6px 0;">Koi account ya policy nahi hai. "+ Add Account/Detail" par click karein.</div>'}</div>
+          <div>${foldersHtml || '<div style="color:var(--muted); font-size:0.85rem; padding:6px 0;">Koi category/folder nahi hai. "+ Add Folder Category" dabayein.</div>'}</div>
         `;
-        container.appendChild(pCard);
+        container.appendChild(pDiv);
       });
 
       if (!hasMatch) {
@@ -501,14 +589,14 @@
       }
     };
 
-    window.toggleFieldMask = (id, text) => {
+    window.toggleMask = (id, val) => {
       const el = document.getElementById(id);
-      el.textContent = (el.textContent === '••••••••') ? text : '••••••••';
+      el.textContent = (el.textContent === '••••••••') ? val : '••••••••';
     };
 
-    window.copyValue = (t) => {
-      if (!t) return;
-      navigator.clipboard.writeText(t).then(() => alert("Copied!"));
+    window.copyValue = (v) => {
+      if (!v) return;
+      navigator.clipboard.writeText(v).then(() => alert("Copied: " + v));
     };
 
     window.lockVault = () => {
@@ -532,7 +620,7 @@
 
 <div class="container">
 
-  <!-- STEP 1: AUTH -->
+  <!-- AUTH -->
   <div id="viewAuth" class="card" style="max-width:480px; margin: 40px auto;">
     <h1>🛡️ OmniVault Access</h1>
     <p>Apne authorized email se sign-in karein.</p>
@@ -543,10 +631,10 @@
     <button onclick="handleLogin()">Sign In</button>
   </div>
 
-  <!-- STEP 2: MASTER DECRYPTION -->
+  <!-- MASTER KEY -->
   <div id="viewMasterKey" class="card hidden" style="max-width:480px; margin: 40px auto;">
     <h1>🔐 Master Passphrase</h1>
-    <p>Apna Master Key daalein jisse data decrypt ho sake.</p>
+    <p>Apna Master Key daalein jo aapke files ko decrypt karega.</p>
     <label>Master Passphrase</label>
     <input type="password" id="masterPassInput" placeholder="Master Key..." />
     <div class="btn-row">
@@ -555,15 +643,15 @@
     </div>
   </div>
 
-  <!-- STEP 3: MAIN VIEW -->
+  <!-- VAULT MAIN -->
   <div id="viewVault" class="hidden">
     
     <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
       <div>
-        <span class="status-badge">● MULTI-ENTITY E2EE ACTIVE</span>
+        <span class="status-badge">● EXPLORER MATRIX E2EE ACTIVE</span>
       </div>
       <div class="btn-row">
-        <button onclick="addNewPerson()">+ Add Person / Entity</button>
+        <button onclick="addPersonPrompt()">+ Add Person / Entity</button>
         <button class="sm secondary" onclick="lockVault()">Lock</button>
         <button class="sm danger" onclick="handleLogout()">Logout</button>
       </div>
@@ -571,34 +659,34 @@
 
     <!-- Search Bar -->
     <div class="card" style="padding:10px 14px;">
-      <input type="text" id="searchQuery" placeholder="🔍 Search any person, account, card no, policy, PIN, note..." oninput="renderVault()" style="margin-bottom:0;" />
+      <input type="text" id="searchQuery" placeholder="🔍 Search person, folder, bank, card, policy, CVV, pin, note..." oninput="renderVault()" style="margin-bottom:0;" />
     </div>
 
-    <!-- ADD/EDIT ITEM MODAL -->
+    <!-- DYNAMIC RECORD MODAL -->
     <div id="itemModal" class="card hidden" style="border: 1px solid var(--primary);">
-      <h2 id="itemModalTitle">Add Account / Detail</h2>
+      <h2 id="itemModalTitle">Add Record Details</h2>
       
-      <label>1. Kiska Account / Service Hai? (e.g. LIC Policy, SBI Savings, HDFC Card, Income Tax)</label>
-      <input type="text" id="serviceTitleInput" placeholder="Title likhein..." />
+      <label>1. Record / Bank / Service Title (e.g. HDFC Regalia CC, SBI Saving, LIC Jeevan Labh)</label>
+      <input type="text" id="itemTitleInput" placeholder="Record Title..." />
 
-      <label>2. Uske andar ke Details (Dynamic Custom Fields)</label>
+      <label>2. Dynamic Excel Cells (Add Any Label & Value)</label>
       <div id="dynamicFieldsBox"></div>
       
       <div class="btn-row" style="margin-bottom:14px;">
-        <button type="button" class="secondary sm" onclick="addDynamicFieldRow('', '')">+ Add Text Detail</button>
-        <button type="button" class="secondary sm" onclick="addDynamicFieldRow('', '', true)">+ Add Secret Detail</button>
+        <button type="button" class="secondary sm" onclick="addDynamicFieldRow('', '')">+ Add Plain Cell</button>
+        <button type="button" class="secondary sm" onclick="addDynamicFieldRow('', '', true)">+ Add Secret/Masked Cell</button>
       </div>
 
-      <label>Notes / Additional Info</label>
-      <textarea id="serviceNotesInput" rows="2" placeholder="Nominee, branch, phone number, instructions..."></textarea>
+      <label>Notes / Extra Info</label>
+      <textarea id="itemNotesInput" rows="2" placeholder="Renewal dates, Nominee, Phone numbers..."></textarea>
 
       <div class="btn-row">
-        <button onclick="saveItem()">Save Encrypted</button>
+        <button onclick="saveItem()">Save to Vault</button>
         <button class="secondary" onclick="closeItemModal()">Cancel</button>
       </div>
     </div>
 
-    <!-- HIERARCHICAL LIST OF PEOPLE & ACCOUNTS -->
+    <!-- EXPLORER LIST -->
     <div id="vaultList"></div>
 
   </div>
