@@ -277,14 +277,27 @@
     let vaultData = []; 
     let activePersonIdx = 0;
     let openFolders = {};
-    let idleTimer = null;
 
-    // --- CRYPTO (AES-GCM 256 + PBKDF2) ---
-    async function deriveKey(pass, salt) {
+    // --- BASE64 HELPER (Guarantees perfect cross-device serialization) ---
+    function u8ToBase64(u8) {
+      let binary = "";
+      for (let i = 0; i < u8.length; i++) binary += String.fromCharCode(u8[i]);
+      return btoa(binary);
+    }
+
+    function base64ToU8(base64) {
+      const binary = atob(base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      return bytes;
+    }
+
+    // --- CRYPTO (PBKDF2 + AES-GCM 256) ---
+    async function deriveKey(pass, saltU8) {
       const enc = new TextEncoder();
       const baseKey = await crypto.subtle.importKey("raw", enc.encode(pass), { name: "PBKDF2" }, false, ["deriveKey"]);
       return crypto.subtle.deriveKey(
-        { name: "PBKDF2", salt, iterations: 100000, hash: "SHA-256" },
+        { name: "PBKDF2", salt: saltU8, iterations: 100000, hash: "SHA-256" },
         baseKey,
         { name: "AES-GCM", length: 256 },
         false,
@@ -296,29 +309,18 @@
       const iv = crypto.getRandomValues(new Uint8Array(12));
       const enc = new TextEncoder();
       const cipher = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, enc.encode(JSON.stringify(data)));
-      return { iv: Array.from(iv), cipher: Array.from(new Uint8Array(cipher)) };
+      return {
+        iv: u8ToBase64(iv),
+        cipher: u8ToBase64(new Uint8Array(cipher))
+      };
     }
 
-    async function decryptPayload(cipherArr, ivArr, key) {
-      const iv = new Uint8Array(ivArr);
-      const cipher = new Uint8Array(cipherArr);
+    async function decryptPayload(cipherBase64, ivBase64, key) {
+      const iv = base64ToU8(ivBase64);
+      const cipher = base64ToU8(cipherBase64);
       const dec = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, cipher);
       return JSON.parse(new TextDecoder().decode(dec));
     }
-
-    // --- IDLE AUTO-LOCK ---
-    function resetIdleTimer() {
-      clearTimeout(idleTimer);
-      idleTimer = setTimeout(() => {
-        if (masterCryptoKey) window.lockVault();
-      }, 5 * 60 * 1000);
-    }
-    ['touchstart', 'mousedown', 'keydown', 'scroll'].forEach(e => window.addEventListener(e, resetIdleTimer));
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden && masterCryptoKey) {
-        window.lockVault();
-      }
-    });
 
     // --- AUTH OBSERVER ---
     onAuthStateChanged(auth, (user) => {
@@ -334,18 +336,20 @@
       }
     });
 
+    // --- LIVE SYNC WITHOUT REFRESH / BUTTON ---
     function listenCloud(uid) {
       const ref = doc(db, "vaults", uid);
       onSnapshot(ref, async (snap) => {
         if (snap.exists()) {
           cloudPayload = snap.data();
-          if (masterCryptoKey) {
+          if (masterCryptoKey && cloudPayload.cipher && cloudPayload.iv) {
             try {
-              const cipherArr = Object.values(cloudPayload.cipher);
-              const ivArr = Object.values(cloudPayload.iv);
-              vaultData = await decryptPayload(cipherArr, ivArr, masterCryptoKey);
+              // Realtime live decrypt on incoming changes from ANY device
+              vaultData = await decryptPayload(cloudPayload.cipher, cloudPayload.iv, masterCryptoKey);
               renderApp();
-            } catch(e) { console.error("Sync decrypt failed", e); }
+            } catch(e) {
+              console.error("Auto live-sync decrypt failed", e);
+            }
           }
         }
       });
@@ -358,43 +362,40 @@
       catch (err) { alert(err.message); }
     };
 
-    // MULTI-DEVICE ROBUST UNLOCK
+    // --- MULTI-DEVICE INSTANT UNLOCK ---
     window.unlockVault = async () => {
       const pass = document.getElementById("masterInput").value.trim();
       if (!pass) return alert("Master key daalein!");
 
-      // Check cloud payload directly agar sync delay ho
+      // Make sure we have cloud doc directly if onSnapshot hasn't fired yet
       if (!cloudPayload && currentUser) {
         try {
           const snap = await getDoc(doc(db, "vaults", currentUser.uid));
-          if (snap.exists()) {
-            cloudPayload = snap.data();
-          }
-        } catch (fetchErr) {
-          console.error("Direct fetch error:", fetchErr);
+          if (snap.exists()) cloudPayload = snap.data();
+        } catch (e) {
+          console.error("Direct fetch failed", e);
         }
       }
 
       try {
-        let salt;
+        let saltU8;
         if (cloudPayload && cloudPayload.salt) {
-          salt = new Uint8Array(Object.values(cloudPayload.salt));
+          saltU8 = base64ToU8(cloudPayload.salt);
         } else {
-          salt = crypto.getRandomValues(new Uint8Array(16));
+          saltU8 = crypto.getRandomValues(new Uint8Array(16));
         }
 
-        const derived = await deriveKey(pass, salt);
+        const derived = await deriveKey(pass, saltU8);
 
         if (cloudPayload && cloudPayload.cipher && cloudPayload.iv) {
           try {
-            const cipherArr = Object.values(cloudPayload.cipher);
-            const ivArr = Object.values(cloudPayload.iv);
-            vaultData = await decryptPayload(cipherArr, ivArr, derived);
+            vaultData = await decryptPayload(cloudPayload.cipher, cloudPayload.iv, derived);
           } catch(e) {
-            alert("Galat Master Key! Check karein Caps Lock on toh nahi hai ya extra space toh nahi hai.");
+            alert("Galat Master Key! Caps-Lock ya space check karein.");
             return;
           }
         } else {
+          // Default baseline
           vaultData = [
             {
               id: Date.now(),
@@ -412,9 +413,10 @@
         document.getElementById("screenMaster").classList.add("hidden");
         document.getElementById("screenVault").classList.remove("hidden");
         document.getElementById("masterInput").value = "";
-        resetIdleTimer();
         renderApp();
-      } catch(e) { alert("Unlock error: " + e.message); }
+      } catch(e) { 
+        alert("Unlock error: " + e.message); 
+      }
     };
 
     // --- RENDER APP ---
@@ -670,17 +672,19 @@
       }
     };
 
+    // --- ENCRYPT & PUSH DIRECT TO CLOUD ---
     async function syncCloud() {
       if (!currentUser || !masterCryptoKey) return;
       const encrypted = await encryptPayload(vaultData, masterCryptoKey);
-      let saltArr = (cloudPayload && cloudPayload.salt) 
-        ? Object.values(cloudPayload.salt) 
-        : Array.from(crypto.getRandomValues(new Uint8Array(16)));
+      
+      let saltBase64 = (cloudPayload && cloudPayload.salt) 
+        ? cloudPayload.salt 
+        : u8ToBase64(crypto.getRandomValues(new Uint8Array(16)));
 
       const payloadToSave = {
         iv: encrypted.iv,
         cipher: encrypted.cipher,
-        salt: saltArr,
+        salt: saltBase64,
         lastModified: new Date().toISOString()
       };
 
