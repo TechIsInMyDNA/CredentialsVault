@@ -274,7 +274,6 @@
     // --- ZERO-FAIL AES-GCM KEY DERIVATION ---
     async function deriveKey(pass) {
       const enc = new TextEncoder();
-      // Universal deterministic salt (no random mismatch across phone/PC)
       const salt = await crypto.subtle.digest("SHA-256", enc.encode("OMNIVAULT_SHARED_SALT_KEY"));
       const baseKey = await crypto.subtle.importKey("raw", enc.encode(pass), { name: "PBKDF2" }, false, ["deriveKey"]);
       return crypto.subtle.deriveKey(
@@ -318,7 +317,6 @@
             return;
           }
         } else {
-          // Default baseline
           vaultData = [
             {
               id: Date.now(),
@@ -338,7 +336,6 @@
         document.getElementById("screenVault").classList.remove("hidden");
         document.getElementById("masterInput").value = "";
 
-        // Start Live Real-time Sync
         startRealtimeListener();
         renderApp();
       } catch (err) {
@@ -346,7 +343,6 @@
       }
     };
 
-    // --- LIVE SYNC LISTENER (PC + Mobile instant update) ---
     function startRealtimeListener() {
       onSnapshot(doc(db, "vaults", "SHARED_ROOT_VAULT"), async (snap) => {
         if (!isLocked && masterCryptoKey && snap.exists()) {
@@ -363,7 +359,6 @@
       });
     }
 
-    // --- ENCRYPT & SAVE TO FIRESTORE ---
     async function syncCloud() {
       if (!masterCryptoKey) return;
       const enc = await encryptPayload(vaultData, masterCryptoKey);
@@ -435,6 +430,7 @@
               <div class="item-header">
                 <span class="item-name">${escapeHtml(item.title)}</span>
                 <div style="display:flex; gap:6px;">
+                  <span class="btn-action-tag" onclick="duplicateItem(${fIdx}, ${realItemIdx})" title="Duplicate Record">📋 Copy</span>
                   <span class="btn-action-tag" onclick="openEditModal(${fIdx}, ${realItemIdx})">Edit</span>
                   <span class="btn-action-tag" style="color:var(--danger);" onclick="deleteItem(${fIdx}, ${realItemIdx})">Delete</span>
                 </div>
@@ -567,6 +563,29 @@
       document.getElementById("modalSheet").classList.remove("hidden");
     };
 
+    // --- DUPLICATE RECORD FEATURE ---
+    window.duplicateItem = async (fIdx, iIdx) => {
+      const original = vaultData[activePersonIdx].folders[fIdx].items[iIdx];
+      
+      // Deep clone fields
+      const clonedFields = (original.fields || []).map(f => ({ ...f }));
+      
+      const duplicatedItem = {
+        id: Date.now(),
+        title: original.title ? `${original.title} (Copy)` : "New Record",
+        notes: original.notes || "",
+        fields: clonedFields
+      };
+
+      // Push to list
+      vaultData[activePersonIdx].folders[fIdx].items.unshift(duplicatedItem);
+      await syncCloud();
+      renderApp();
+
+      // Seedhe edit modal open ho jayega taaki data turant change kar sakein
+      window.openEditModal(fIdx, 0);
+    };
+
     window.closeModal = () => { document.getElementById("modalSheet").classList.add("hidden"); };
 
     window.addFieldRow = (k = "", v = "", isSec = false) => {
@@ -644,7 +663,7 @@
 </head>
 <body>
 
-  <!-- MASTER PASSPHRASE GATEWAY (Direct Access) -->
+  <!-- MASTER PASSPHRASE GATEWAY -->
   <div id="screenMaster" style="padding:24px; max-width:400px; margin: 60px auto;">
     <h2 style="color:var(--primary); margin-bottom:8px;">🔐 OmniVault Unlock</h2>
     <p style="font-size:0.85rem; color:var(--muted); margin-bottom:14px;">Enter Master Passphrase to sync and decrypt.</p>
