@@ -2,180 +2,246 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>OmniVault - Explorer & Excel Matrix</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>OmniVault</title>
+  
+  <!-- Mobile Web App Meta for APK-like experience -->
+  <meta name="theme-color" content="#0b1120" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
   <style>
     :root {
-      --bg: #090d16;
-      --card: #121927;
-      --folder-card: #0c121e;
-      --border: #202d42;
+      --bg: #0b1120;
+      --surface: #131d31;
+      --surface-sub: #1b2742;
+      --border: #243556;
       --primary: #38bdf8;
-      --primary-hover: #0284c7;
-      --accent: #a855f7;
-      --folder-color: #f59e0b;
+      --primary-dim: rgba(56, 189, 248, 0.12);
+      --accent: #818cf8;
       --text: #f8fafc;
       --muted: #94a3b8;
       --danger: #ef4444;
       --success: #10b981;
+      --safe-bottom: env(safe-area-inset-bottom, 16px);
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background: var(--bg); color: var(--text); padding: 14px; min-height: 100vh; display: flex; justify-content: center; }
-    .container { width: 100%; max-width: 900px; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: calc(80px + var(--safe-bottom)); user-select: none; }
 
-    .card {
-      background: var(--card);
+    /* TOP STICKY BAR */
+    .top-bar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(11, 17, 32, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 12px 16px 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .brand-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .brand-title { font-size: 1.15rem; font-weight: 800; color: var(--primary); letter-spacing: 0.5px; }
+    .status-dot { font-size: 0.75rem; color: var(--success); font-weight: 700; display: flex; align-items: center; gap: 5px; }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 14px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      padding: 0 12px;
     }
-
-    h1 { font-size: 1.25rem; color: var(--primary); display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-    p { font-size: 0.85rem; color: var(--muted); margin-bottom: 12px; }
-
-    label { font-size: 0.75rem; font-weight: 700; color: var(--muted); display: block; margin-bottom: 4px; text-transform: uppercase; }
-    input, textarea {
+    .search-box input {
       width: 100%;
-      padding: 9px 12px;
-      background: #060910;
-      border: 1px solid var(--border);
-      border-radius: 6px;
+      padding: 10px 8px;
+      background: transparent;
+      border: none;
       color: #fff;
-      font-size: 0.9rem;
-      margin-bottom: 10px;
+      font-size: 0.92rem;
+      outline: none;
     }
-    input:focus, textarea:focus { outline: none; border-color: var(--primary); }
 
-    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-    button {
+    /* HORIZONTAL PERSON CHIPS (SWIPEABLE TABS) */
+    .person-tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 12px 16px 4px;
+      scrollbar-width: none;
+    }
+    .person-tabs::-webkit-scrollbar { display: none; }
+    .tab-chip {
+      white-space: nowrap;
+      padding: 8px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab-chip.active {
       background: var(--primary);
       color: #04101e;
-      border: none;
-      padding: 8px 14px;
-      border-radius: 6px;
-      font-weight: 600;
-      font-size: 0.82rem;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-    button:hover { background: var(--primary-hover); }
-    button.secondary { background: #1e293b; color: #cbd5e1; border: 1px solid var(--border); }
-    button.secondary:hover { background: #334155; }
-    button.danger { background: var(--danger); color: #fff; }
-    button.accent { background: var(--accent); color: #fff; }
-    button.folder { background: #1e293b; color: var(--folder-color); border: 1px solid #334155; }
-    button.sm { padding: 4px 8px; font-size: 0.75rem; }
-
-    /* LEVEL 1: PERSON / DIRECTORY */
-    .person-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 16px;
-    }
-    .person-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 2px solid var(--border);
-      padding-bottom: 8px;
-      margin-bottom: 14px;
-    }
-    .person-title {
-      font-size: 1.15rem;
-      font-weight: 800;
-      color: var(--accent);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      letter-spacing: 0.5px;
+      border-color: var(--primary);
+      font-weight: 700;
     }
 
-    /* LEVEL 2: CATEGORY / FOLDER ACCORDION */
-    .folder-box {
-      background: var(--folder-card);
+    /* MAIN APP BODY */
+    .main-content { padding: 12px 16px; max-width: 720px; margin: 0 auto; }
+
+    /* FOLDER ACCORDION */
+    .folder-card {
+      background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 8px;
-      margin-bottom: 10px;
+      border-radius: 14px;
+      margin-bottom: 12px;
       overflow: hidden;
     }
     .folder-header {
+      padding: 14px 16px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 10px 14px;
-      background: rgba(255,255,255,0.02);
-      border-bottom: 1px solid var(--border);
       cursor: pointer;
+      background: rgba(255,255,255,0.01);
     }
-    .folder-name {
-      font-size: 0.95rem;
-      font-weight: 700;
-      color: var(--folder-color);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .folder-content {
-      padding: 12px;
+    .folder-title-box { display: flex; align-items: center; gap: 10px; }
+    .folder-icon { font-size: 1.1rem; }
+    .folder-name { font-size: 0.95rem; font-weight: 700; color: #e2e8f0; letter-spacing: 0.4px; }
+    .folder-count { font-size: 0.75rem; background: var(--surface-sub); padding: 3px 8px; border-radius: 12px; color: var(--muted); }
+
+    .folder-items-container {
+      padding: 0 12px 12px;
       display: flex;
       flex-direction: column;
       gap: 10px;
+      border-top: 1px solid rgba(255,255,255,0.04);
     }
 
-    /* LEVEL 3: EXCEL ITEM CARD & DYNAMIC CELLS */
+    /* ITEM CARD */
     .item-card {
-      background: #080c14;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 12px;
+      background: var(--surface-sub);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-top: 10px;
     }
-    .item-top {
+    .item-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
+      margin-bottom: 10px;
       padding-bottom: 6px;
-      margin-bottom: 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
     }
     .item-name { font-size: 0.95rem; font-weight: 700; color: var(--primary); }
 
-    .fields-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 6px;
-    }
-    .cell-box {
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.05);
-      padding: 6px 8px;
-      border-radius: 5px;
+    .cells-list { display: flex; flex-direction: column; gap: 6px; }
+    .cell-row {
       display: flex;
-      flex-direction: column;
       justify-content: space-between;
+      align-items: center;
+      background: rgba(0,0,0,0.25);
+      padding: 7px 10px;
+      border-radius: 8px;
+      font-size: 0.85rem;
     }
-    .cell-label { font-size: 0.72rem; color: var(--muted); font-weight: 600; text-transform: uppercase; margin-bottom: 2px; }
-    .cell-val-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; }
-    .cell-action { color: var(--primary); cursor: pointer; font-size: 0.75rem; margin-left: 6px; }
-    .cell-action:hover { text-decoration: underline; }
+    .cell-key { color: var(--muted); font-size: 0.78rem; font-weight: 600; text-transform: uppercase; }
+    .cell-val-box { display: flex; align-items: center; gap: 8px; font-weight: 500; }
+    .btn-action-tag {
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      background: var(--surface);
+      border-radius: 6px;
+      color: var(--primary);
+      cursor: pointer;
+    }
 
-    /* DYNAMIC FIELDS CREATION IN MODAL */
+    /* FLOATING ACTION BUTTON (+ FAB) */
+    .fab-btn {
+      position: fixed;
+      bottom: calc(20px + var(--safe-bottom));
+      right: 20px;
+      width: 58px;
+      height: 58px;
+      border-radius: 29px;
+      background: var(--primary);
+      color: #04101e;
+      border: none;
+      box-shadow: 0 6px 20px rgba(56, 189, 248, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      font-weight: bold;
+      cursor: pointer;
+      z-index: 90;
+      transition: transform 0.2s;
+    }
+    .fab-btn:active { transform: scale(0.92); }
+
+    /* MOBILE SLIDE-UP BOTTOM SHEET / MODAL */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+    }
+    .modal-sheet {
+      background: var(--surface);
+      width: 100%;
+      max-width: 600px;
+      border-radius: 20px 20px 0 0;
+      padding: 20px 16px calc(24px + var(--safe-bottom));
+      max-height: 88vh;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+    }
+    .sheet-title { font-size: 1.1rem; font-weight: 800; color: #fff; margin-bottom: 14px; }
+    
+    label { font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; display: block; }
+    input, select, textarea {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: #fff;
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+    }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); }
+
+    .btn-row { display: flex; gap: 8px; }
+    button.btn {
+      flex: 1;
+      padding: 11px;
+      border-radius: 10px;
+      border: none;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    .btn-primary { background: var(--primary); color: #04101e; }
+    .btn-secondary { background: var(--surface-sub); color: #fff; }
+    .btn-danger { background: var(--danger); color: #fff; }
+
     .field-pair {
       display: grid;
       grid-template-columns: 1fr 1.3fr auto;
-      gap: 8px;
+      gap: 6px;
       margin-bottom: 8px;
       align-items: center;
     }
     .field-pair input { margin-bottom: 0; }
 
-    .status-badge { font-size: 0.75rem; color: var(--success); font-weight: 700; }
     .hidden { display: none !important; }
   </style>
 
@@ -200,18 +266,16 @@
     const db = getFirestore(app);
 
     let currentUser = null;
-    let cloudRawPayload = null;
+    let cloudPayload = null;
     let masterCryptoKey = null;
     let vaultData = []; 
+    let activePersonIdx = 0;
+    let openFolders = {};
 
-    let curPIdx = null;
-    let curFIdx = null;
-    let curIIdx = null;
-
-    // --- CRYPTO (AES-GCM-256 + PBKDF2) ---
-    async function deriveKey(passphrase, salt) {
+    // Crypto Engine (PBKDF2 + AES-GCM 256)
+    async function deriveKey(pass, salt) {
       const enc = new TextEncoder();
-      const baseKey = await crypto.subtle.importKey("raw", enc.encode(passphrase), { name: "PBKDF2" }, false, ["deriveKey"]);
+      const baseKey = await crypto.subtle.importKey("raw", enc.encode(pass), { name: "PBKDF2" }, false, ["deriveKey"]);
       return crypto.subtle.deriveKey(
         { name: "PBKDF2", salt, iterations: 100000, hash: "SHA-256" },
         baseKey,
@@ -221,251 +285,313 @@
       );
     }
 
-    async function encryptPayload(dataObj, key) {
+    async function encryptPayload(data, key) {
       const iv = crypto.getRandomValues(new Uint8Array(12));
       const enc = new TextEncoder();
-      const cipher = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, enc.encode(JSON.stringify(dataObj)));
+      const cipher = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, enc.encode(JSON.stringify(data)));
       return { iv: Array.from(iv), cipher: Array.from(new Uint8Array(cipher)) };
     }
 
-    async function decryptPayload(cipherArray, ivArray, key) {
-      const iv = new Uint8Array(ivArray);
-      const cipher = new Uint8Array(cipherArray);
-      const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, cipher);
-      return JSON.parse(new TextDecoder().decode(decrypted));
+    async function decryptPayload(cipherArr, ivArr, key) {
+      const iv = new Uint8Array(ivArr);
+      const cipher = new Uint8Array(cipherArr);
+      const dec = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, cipher);
+      return JSON.parse(new TextDecoder().decode(dec));
     }
 
-    // --- AUTH OBSERVER ---
+    // Auth Listener
     onAuthStateChanged(auth, (user) => {
       currentUser = user;
       if (user) {
-        document.getElementById("viewAuth").classList.add("hidden");
-        document.getElementById("viewMasterKey").classList.remove("hidden");
-        listenToFirestore(user.uid);
+        document.getElementById("screenAuth").classList.add("hidden");
+        document.getElementById("screenMaster").classList.remove("hidden");
+        listenCloud(user.uid);
       } else {
-        document.getElementById("viewAuth").classList.remove("hidden");
-        document.getElementById("viewMasterKey").classList.add("hidden");
-        document.getElementById("viewVault").classList.add("hidden");
+        document.getElementById("screenAuth").classList.remove("hidden");
+        document.getElementById("screenMaster").classList.add("hidden");
+        document.getElementById("screenVault").classList.add("hidden");
       }
     });
 
-    function listenToFirestore(uid) {
-      const docRef = doc(db, "vaults", uid);
-      onSnapshot(docRef, async (snap) => {
+    function listenCloud(uid) {
+      const ref = doc(db, "vaults", uid);
+      onSnapshot(ref, async (snap) => {
         if (snap.exists()) {
-          cloudRawPayload = snap.data();
+          cloudPayload = snap.data();
           if (masterCryptoKey) {
             try {
-              vaultData = await decryptPayload(cloudRawPayload.cipher, cloudRawPayload.iv, masterCryptoKey);
-              renderVault();
-            } catch(e) {
-              console.error("Auto-sync decrypt failed", e);
-            }
-          }
-        } else {
-          cloudRawPayload = null;
-          if (masterCryptoKey) {
-            vaultData = [];
-            renderVault();
+              vaultData = await decryptPayload(cloudPayload.cipher, cloudPayload.iv, masterCryptoKey);
+              renderApp();
+            } catch(e) { console.error("Sync decrypt failed", e); }
           }
         }
       });
     }
 
-    window.handleLogin = async () => {
-      const email = document.getElementById("loginEmail").value.trim();
-      const pass = document.getElementById("loginPass").value.trim();
-      try {
-        await signInWithEmailAndPassword(auth, email, pass);
-      } catch (err) { alert("Login Error: " + err.message); }
+    window.doLogin = async () => {
+      const e = document.getElementById("authEmail").value.trim();
+      const p = document.getElementById("authPass").value.trim();
+      try { await signInWithEmailAndPassword(auth, e, p); } 
+      catch (err) { alert(err.message); }
     };
 
     window.unlockVault = async () => {
-      const masterPass = document.getElementById("masterPassInput").value.trim();
-      if (!masterPass) return alert("Master Passphrase daalein!");
+      const pass = document.getElementById("masterInput").value.trim();
+      if (!pass) return alert("Master key daalein!");
 
       try {
         let salt;
-        if (cloudRawPayload && Array.isArray(cloudRawPayload.salt) && cloudRawPayload.salt.length === 16) {
-          salt = new Uint8Array(cloudRawPayload.salt);
+        if (cloudPayload && Array.isArray(cloudPayload.salt) && cloudPayload.salt.length === 16) {
+          salt = new Uint8Array(cloudPayload.salt);
         } else {
           salt = crypto.getRandomValues(new Uint8Array(16));
         }
 
-        const derived = await deriveKey(masterPass, salt);
+        const derived = await deriveKey(pass, salt);
 
-        if (cloudRawPayload && cloudRawPayload.cipher) {
+        if (cloudPayload && cloudPayload.cipher) {
           try {
-            vaultData = await decryptPayload(cloudRawPayload.cipher, cloudRawPayload.iv, derived);
-          } catch(err) {
-            alert("Galat Master Key! Decryption fail ho gaya.");
+            vaultData = await decryptPayload(cloudPayload.cipher, cloudPayload.iv, derived);
+          } catch(e) {
+            alert("Galat Master Key!");
             return;
           }
         } else {
-          vaultData = [];
+          // Default Preloaded Folders for Shubham if fresh
+          vaultData = [
+            {
+              id: Date.now(),
+              name: "SHUBHAM AGRAWAL",
+              folders: [
+                { id: 1, name: "SAVING ACCOUNTS", items: [] },
+                { id: 2, name: "ALL CARDS", items: [] },
+                { id: 3, name: "INSURANCE", items: [] }
+              ]
+            }
+          ];
         }
 
         masterCryptoKey = derived;
-        document.getElementById("viewMasterKey").classList.add("hidden");
-        document.getElementById("viewVault").classList.remove("hidden");
-        document.getElementById("masterPassInput").value = "";
-        renderVault();
-      } catch (e) {
-        alert("Unlock Error: " + e.message);
-      }
+        document.getElementById("screenMaster").classList.add("hidden");
+        document.getElementById("screenVault").classList.remove("hidden");
+        document.getElementById("masterInput").value = "";
+        renderApp();
+      } catch(e) { alert("Unlock error: " + e.message); }
     };
 
-    // LEVEL 1: PERSON OPERATIONS
-    window.addPersonPrompt = async () => {
-      const name = prompt("Person / Entity Name (e.g. SHUBHAM AGRAWAL, PRACHI AGRAWAL):");
+    // UI RENDERER
+    window.renderApp = () => {
+      const tabsBox = document.getElementById("personTabs");
+      const contentBox = document.getElementById("folderList");
+      const query = (document.getElementById("searchBar").value || "").trim().toLowerCase();
+
+      // Render Person Chips
+      let tabsHtml = "";
+      vaultData.forEach((p, idx) => {
+        tabsHtml += `<div class="tab-chip ${idx === activePersonIdx ? 'active' : ''}" onclick="selectPerson(${idx})">👤 ${escapeHtml(p.name)}</div>`;
+      });
+      tabsHtml += `<div class="tab-chip" onclick="promptNewPerson()">+ Add Person</div>`;
+      tabsBox.innerHTML = tabsHtml;
+
+      if (!vaultData[activePersonIdx]) {
+        activePersonIdx = 0;
+      }
+      const curPerson = vaultData[activePersonIdx];
+      if (!curPerson) {
+        contentBox.innerHTML = `<p style="text-align:center; padding:30px; color:var(--muted);">Koi Person nahi hai.</p>`;
+        return;
+      }
+
+      // Render Folders & Items
+      let fHtml = "";
+      (curPerson.folders || []).forEach((folder, fIdx) => {
+        const isOpen = openFolders[`${activePersonIdx}_${fIdx}`] || query.length > 0;
+
+        const filteredItems = (folder.items || []).filter(item => {
+          if (!query) return true;
+          if (item.title.toLowerCase().includes(query)) return true;
+          if (item.notes && item.notes.toLowerCase().includes(query)) return true;
+          return (item.fields || []).some(f => f.key.toLowerCase().includes(query) || f.val.toLowerCase().includes(query));
+        });
+
+        if (query && filteredItems.length === 0) return;
+
+        let itemsHtml = "";
+        filteredItems.forEach((item) => {
+          const realItemIdx = folder.items.findIndex(i => i.id === item.id);
+          let cellsHtml = "";
+          (item.fields || []).forEach((f, cIdx) => {
+            const cid = `c_${item.id}_${cIdx}`;
+            const isHidden = f.isSecret;
+            cellsHtml += `
+              <div class="cell-row">
+                <span class="cell-key">${escapeHtml(f.key)}</span>
+                <div class="cell-val-box">
+                  <span id="${cid}" style="font-family:${isHidden ? 'monospace' : 'inherit'};">${isHidden ? '••••••••' : escapeHtml(f.val)}</span>
+                  ${isHidden ? `<span class="btn-action-tag" onclick="toggleSecret('${cid}', '${escapeQuotes(f.val)}')">Show</span>` : ''}
+                  <span class="btn-action-tag" onclick="copyVal('${escapeQuotes(f.val)}')">Copy</span>
+                </div>
+              </div>
+            `;
+          });
+
+          itemsHtml += `
+            <div class="item-card">
+              <div class="item-header">
+                <span class="item-name">${escapeHtml(item.title)}</span>
+                <div style="display:flex; gap:6px;">
+                  <span class="btn-action-tag" onclick="openEditModal(${fIdx}, ${realItemIdx})">Edit</span>
+                  <span class="btn-action-tag" style="color:var(--danger);" onclick="deleteItem(${fIdx}, ${realItemIdx})">Delete</span>
+                </div>
+              </div>
+              <div class="cells-list">${cellsHtml}</div>
+              ${item.notes ? `<div style="font-size:0.75rem; color:var(--muted); margin-top:8px;">${escapeHtml(item.notes)}</div>` : ''}
+            </div>
+          `;
+        });
+
+        fHtml += `
+          <div class="folder-card">
+            <div class="folder-header" onclick="toggleFolder(${fIdx})">
+              <div class="folder-title-box">
+                <span class="folder-icon">${isOpen ? '📂' : '📁'}</span>
+                <span class="folder-name">${escapeHtml(folder.name)}</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="folder-count">${filteredItems.length}</span>
+                <span style="font-size:0.75rem; color:var(--muted);">${isOpen ? '▲' : '▼'}</span>
+              </div>
+            </div>
+            ${isOpen ? `
+              <div class="folder-items-container">
+                ${itemsHtml || '<p style="font-size:0.8rem; color:var(--muted); padding:10px 0;">Folder khali hai.</p>'}
+                <button class="btn btn-secondary" style="font-size:0.78rem; padding:6px; margin-top:6px;" onclick="openAddModal(${fIdx})">+ Add Record in ${escapeHtml(folder.name)}</button>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      });
+
+      contentBox.innerHTML = fHtml || `<p style="text-align:center; padding:30px; color:var(--muted);">Koi record match nahi hua.</p>`;
+    };
+
+    window.selectPerson = (idx) => { activePersonIdx = idx; renderApp(); };
+    window.toggleFolder = (fIdx) => {
+      const key = `${activePersonIdx}_${fIdx}`;
+      openFolders[key] = !openFolders[key];
+      renderApp();
+    };
+
+    window.promptNewPerson = async () => {
+      const name = prompt("Naye Person ka naam:");
       if (!name || !name.trim()) return;
-      vaultData.push({
-        id: Date.now(),
-        name: name.trim(),
-        folders: []
-      });
+      vaultData.push({ id: Date.now(), name: name.trim().toUpperCase(), folders: [] });
+      activePersonIdx = vaultData.length - 1;
       await syncCloud();
-      renderVault();
+      renderApp();
     };
 
-    window.deletePerson = async (pIdx) => {
-      if (confirm(`Delete "${vaultData[pIdx].name}" and all categories inside?`)) {
-        vaultData.splice(pIdx, 1);
-        await syncCloud();
-        renderVault();
-      }
-    };
-
-    // LEVEL 2: FOLDER OPERATIONS
-    window.addFolderPrompt = async (pIdx) => {
-      const fName = prompt(`Folder Category for ${vaultData[pIdx].name} (e.g. SAVING ACCOUNTS, ALL CARDS, INSURANCE):`);
-      if (!fName || !fName.trim()) return;
-      vaultData[pIdx].folders.push({
-        id: Date.now(),
-        name: fName.trim().toUpperCase(),
-        items: []
-      });
+    window.promptNewFolder = async () => {
+      const p = vaultData[activePersonIdx];
+      const name = prompt(`${p.name} ke liye naye Folder ka naam:`);
+      if (!name || !name.trim()) return;
+      p.folders.push({ id: Date.now(), name: name.trim().toUpperCase(), items: [] });
       await syncCloud();
-      renderVault();
+      renderApp();
     };
 
-    window.deleteFolder = async (pIdx, fIdx) => {
-      if (confirm(`Delete folder "${vaultData[pIdx].folders[fIdx].name}"?`)) {
-        vaultData[pIdx].folders.splice(fIdx, 1);
-        await syncCloud();
-        renderVault();
-      }
-    };
+    // MODAL ADD / EDIT
+    let curFIdx = null;
+    let curIIdx = null;
 
-    // LEVEL 3: DYNAMIC EXCEL ITEM OPERATIONS
-    window.openAddItemModal = (pIdx, fIdx) => {
-      curPIdx = pIdx;
+    window.openAddModal = (fIdx) => {
       curFIdx = fIdx;
       curIIdx = null;
-
-      document.getElementById("itemModalTitle").textContent = `Add in ${vaultData[pIdx].folders[fIdx].name}`;
-      document.getElementById("itemTitleInput").value = "";
-      document.getElementById("itemNotesInput").value = "";
+      document.getElementById("modalTitle").textContent = "Add Record Details";
+      document.getElementById("recTitle").value = "";
+      document.getElementById("recNotes").value = "";
       document.getElementById("dynamicFieldsBox").innerHTML = "";
 
-      window.addDynamicFieldRow("Account / Card No", "");
-      window.addDynamicFieldRow("PIN / Password", "", true);
+      window.addFieldRow("Account / ID", "");
+      window.addFieldRow("Password / PIN", "", true);
 
-      document.getElementById("itemModal").classList.remove("hidden");
-      document.getElementById("itemModal").scrollIntoView({ behavior: 'smooth' });
+      document.getElementById("modalSheet").classList.remove("hidden");
     };
 
-    window.editItem = (pIdx, fIdx, iIdx) => {
-      curPIdx = pIdx;
+    window.openEditModal = (fIdx, iIdx) => {
       curFIdx = fIdx;
       curIIdx = iIdx;
+      const itm = vaultData[activePersonIdx].folders[fIdx].items[iIdx];
 
-      const item = vaultData[pIdx].folders[fIdx].items[iIdx];
-      document.getElementById("itemModalTitle").textContent = `Edit in ${vaultData[pIdx].folders[fIdx].name}`;
-      document.getElementById("itemTitleInput").value = item.title || "";
-      document.getElementById("itemNotesInput").value = item.notes || "";
-
+      document.getElementById("modalTitle").textContent = "Edit Record";
+      document.getElementById("recTitle").value = itm.title || "";
+      document.getElementById("recNotes").value = itm.notes || "";
+      
       const box = document.getElementById("dynamicFieldsBox");
       box.innerHTML = "";
-      (item.fields || []).forEach(f => {
-        window.addDynamicFieldRow(f.key, f.val, f.isSecret);
-      });
+      (itm.fields || []).forEach(f => window.addFieldRow(f.key, f.val, f.isSecret));
 
-      document.getElementById("itemModal").classList.remove("hidden");
-      document.getElementById("itemModal").scrollIntoView({ behavior: 'smooth' });
+      document.getElementById("modalSheet").classList.remove("hidden");
     };
 
-    window.deleteItem = async (pIdx, fIdx, iIdx) => {
-      if (confirm("Delete this entry?")) {
-        vaultData[pIdx].folders[fIdx].items.splice(iIdx, 1);
-        await syncCloud();
-        renderVault();
-      }
-    };
+    window.closeModal = () => { document.getElementById("modalSheet").classList.add("hidden"); };
 
-    window.closeItemModal = () => {
-      document.getElementById("itemModal").classList.add("hidden");
-    };
-
-    window.addDynamicFieldRow = (k = "", v = "", isSecret = false) => {
-      const container = document.getElementById("dynamicFieldsBox");
-      const row = document.createElement("div");
-      row.className = "field-pair";
-      row.innerHTML = `
-        <input type="text" placeholder="Cell Column (e.g. CVV, Nominee, IFSC, Policy)" value="${escapeQuotes(k)}" class="f-key" />
-        <input type="${isSecret ? 'password' : 'text'}" placeholder="Value" value="${escapeQuotes(v)}" class="f-val" />
-        <button type="button" class="danger sm" onclick="this.parentElement.remove()">✕</button>
+    window.addFieldRow = (k = "", v = "", isSec = false) => {
+      const box = document.getElementById("dynamicFieldsBox");
+      const d = document.createElement("div");
+      d.className = "field-pair";
+      d.innerHTML = `
+        <input type="text" placeholder="Key (CVV, IFSC)" value="${escapeQuotes(k)}" class="f-key" />
+        <input type="${isSec ? 'password' : 'text'}" placeholder="Value" value="${escapeQuotes(v)}" class="f-val" />
+        <button type="button" class="btn btn-danger" style="padding:6px 10px;" onclick="this.parentElement.remove()">✕</button>
       `;
-      container.appendChild(row);
+      box.appendChild(d);
     };
 
-    window.saveItem = async () => {
-      const title = document.getElementById("itemTitleInput").value.trim();
-      const notes = document.getElementById("itemNotesInput").value.trim();
-
-      if (!title) return alert("Title daalna zaroori hai (e.g. SBI Saving, HDFC Regalia, LIC)!");
+    window.saveModalRecord = async () => {
+      const title = document.getElementById("recTitle").value.trim();
+      const notes = document.getElementById("recNotes").value.trim();
+      if (!title) return alert("Title zaroori hai!");
 
       const fieldPairs = [];
       const keys = document.querySelectorAll(".f-key");
       const vals = document.querySelectorAll(".f-val");
-
       for (let i = 0; i < keys.length; i++) {
-        const k = keys[i].value.trim();
-        const v = vals[i].value.trim();
-        if (k || v) {
-          fieldPairs.push({
-            key: k || "Detail",
-            val: v,
-            isSecret: vals[i].type === "password"
-          });
+        if (keys[i].value || vals[i].value) {
+          fieldPairs.push({ key: keys[i].value || "Detail", val: vals[i].value, isSecret: vals[i].type === 'password' });
         }
       }
 
       const itemObj = {
-        id: curIIdx !== null ? vaultData[curPIdx].folders[curFIdx].items[curIIdx].id : Date.now(),
+        id: curIIdx !== null ? vaultData[activePersonIdx].folders[curFIdx].items[curIIdx].id : Date.now(),
         title,
         notes,
         fields: fieldPairs
       };
 
       if (curIIdx !== null) {
-        vaultData[curPIdx].folders[curFIdx].items[curIIdx] = itemObj;
+        vaultData[activePersonIdx].folders[curFIdx].items[curIIdx] = itemObj;
       } else {
-        vaultData[curPIdx].folders[curFIdx].items.unshift(itemObj);
+        vaultData[activePersonIdx].folders[curFIdx].items.unshift(itemObj);
       }
 
       await syncCloud();
-      window.closeItemModal();
-      renderVault();
+      window.closeModal();
+      renderApp();
+    };
+
+    window.deleteItem = async (fIdx, iIdx) => {
+      if (confirm("Delete karna hai?")) {
+        vaultData[activePersonIdx].folders[fIdx].items.splice(iIdx, 1);
+        await syncCloud();
+        renderApp();
+      }
     };
 
     async function syncCloud() {
       if (!currentUser || !masterCryptoKey) return;
       const encrypted = await encryptPayload(vaultData, masterCryptoKey);
-
-      let saltArr = (cloudRawPayload && cloudRawPayload.salt) 
-        ? cloudRawPayload.salt 
-        : Array.from(crypto.getRandomValues(new Uint8Array(16)));
+      let saltArr = (cloudPayload && cloudPayload.salt) ? cloudPayload.salt : Array.from(crypto.getRandomValues(new Uint8Array(16)));
 
       await setDoc(doc(db, "vaults", currentUser.uid), {
         iv: encrypted.iv,
@@ -475,141 +601,20 @@
       });
     }
 
-    // --- RENDER & UNIVERSAL INSTANT SEARCH ---
-    window.renderVault = () => {
-      const container = document.getElementById("vaultList");
-      const query = (document.getElementById("searchQuery").value || "").trim().toLowerCase();
-      container.innerHTML = "";
-
-      if (vaultData.length === 0) {
-        container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">Vault empty hai. Upar "+ Add Person" dabayein (e.g. SHUBHAM AGRAWAL).</div>`;
-        return;
-      }
-
-      let hasMatch = false;
-
-      vaultData.forEach((person, pIdx) => {
-        const matchPerson = person.name.toLowerCase().includes(query);
-
-        // Filter folders
-        let foldersHtml = "";
-        (person.folders || []).forEach((folder, fIdx) => {
-          const matchFolder = folder.name.toLowerCase().includes(query);
-
-          const matchingItems = (folder.items || []).filter(item => {
-            if (!query || matchPerson || matchFolder) return true;
-            if (item.title.toLowerCase().includes(query)) return true;
-            if (item.notes && item.notes.toLowerCase().includes(query)) return true;
-            return (item.fields || []).some(f => 
-              f.key.toLowerCase().includes(query) || f.val.toLowerCase().includes(query)
-            );
-          });
-
-          if (query && !matchPerson && !matchFolder && matchingItems.length === 0) {
-            return;
-          }
-
-          let itemsHtml = "";
-          matchingItems.forEach((item) => {
-            const realIIdx = folder.items.findIndex(i => i.id === item.id);
-
-            let cellsHtml = "";
-            (item.fields || []).forEach((f, cIdx) => {
-              const cid = `c_${item.id}_${cIdx}`;
-              const isHidden = f.isSecret;
-              cellsHtml += `
-                <div class="cell-box">
-                  <div class="cell-label">${escapeHtml(f.key)}</div>
-                  <div class="cell-val-row">
-                    <span id="${cid}" style="font-family: ${isHidden ? 'monospace' : 'inherit'}; font-weight: 500;">
-                      ${isHidden ? '••••••••' : escapeHtml(f.val)}
-                    </span>
-                    <div>
-                      ${isHidden ? `<span class="cell-action" onclick="toggleMask('${cid}', '${escapeQuotes(f.val)}')">Show</span>` : ''}
-                      <span class="cell-action" onclick="copyValue('${escapeQuotes(f.val)}')">Copy</span>
-                    </div>
-                  </div>
-                </div>
-              `;
-            });
-
-            itemsHtml += `
-              <div class="item-card">
-                <div class="item-top">
-                  <span class="item-name">${escapeHtml(item.title)}</span>
-                  <div class="btn-row">
-                    <button class="secondary sm" onclick="editItem(${pIdx}, ${fIdx}, ${realIIdx})">Edit</button>
-                    <button class="danger sm" onclick="deleteItem(${pIdx}, ${fIdx}, ${realIIdx})">Delete</button>
-                  </div>
-                </div>
-                <div class="fields-grid">${cellsHtml}</div>
-                ${item.notes ? `<div style="font-size:0.78rem; color:var(--muted); margin-top:8px; border-top:1px dashed var(--border); padding-top:4px;"><strong>Note:</strong> ${escapeHtml(item.notes)}</div>` : ''}
-              </div>
-            `;
-          });
-
-          foldersHtml += `
-            <div class="folder-box">
-              <div class="folder-header">
-                <span class="folder-name">📁 ${escapeHtml(folder.name)}</span>
-                <div class="btn-row">
-                  <button class="sm secondary" onclick="openAddItemModal(${pIdx}, ${fIdx})">+ Add Record</button>
-                  <button class="sm danger" onclick="deleteFolder(${pIdx}, ${fIdx})">Delete Folder</button>
-                </div>
-              </div>
-              <div class="folder-content">
-                ${itemsHtml || '<div style="color:var(--muted); font-size:0.8rem;">Khali folder hai. "+ Add Record" par click karein.</div>'}
-              </div>
-            </div>
-          `;
-        });
-
-        if (query && !matchPerson && foldersHtml === "") {
-          return;
-        }
-
-        hasMatch = true;
-        const pDiv = document.createElement("div");
-        pDiv.className = "person-card";
-        pDiv.innerHTML = `
-          <div class="person-header">
-            <span class="person-title">👤 ${escapeHtml(person.name)}</span>
-            <div class="btn-row">
-              <button class="sm folder" onclick="addFolderPrompt(${pIdx})">+ Add Folder Category</button>
-              <button class="sm danger" onclick="deletePerson(${pIdx})">Delete Person</button>
-            </div>
-          </div>
-          <div>${foldersHtml || '<div style="color:var(--muted); font-size:0.85rem; padding:6px 0;">Koi category/folder nahi hai. "+ Add Folder Category" dabayein.</div>'}</div>
-        `;
-        container.appendChild(pDiv);
-      });
-
-      if (!hasMatch) {
-        container.innerHTML = `<div style="text-align:center; padding:30px; color:var(--muted);">Koi record nahi mila query ke hisaab se.</div>`;
-      }
-    };
-
-    window.toggleMask = (id, val) => {
+    window.toggleSecret = (id, val) => {
       const el = document.getElementById(id);
-      el.textContent = (el.textContent === '••••••••') ? val : '••••••••';
+      el.textContent = el.textContent === '••••••••' ? val : '••••••••';
     };
 
-    window.copyValue = (v) => {
+    window.copyVal = (v) => {
       if (!v) return;
       navigator.clipboard.writeText(v).then(() => alert("Copied: " + v));
     };
 
     window.lockVault = () => {
       masterCryptoKey = null;
-      vaultData = [];
-      document.getElementById("viewVault").classList.add("hidden");
-      document.getElementById("viewMasterKey").classList.remove("hidden");
-    };
-
-    window.handleLogout = async () => {
-      masterCryptoKey = null;
-      vaultData = [];
-      await signOut(auth);
+      document.getElementById("screenVault").classList.add("hidden");
+      document.getElementById("screenMaster").classList.remove("hidden");
     };
 
     function escapeHtml(s) { return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
@@ -618,80 +623,85 @@
 </head>
 <body>
 
-<div class="container">
-
-  <!-- AUTH -->
-  <div id="viewAuth" class="card" style="max-width:480px; margin: 40px auto;">
-    <h1>🛡️ OmniVault Access</h1>
-    <p>Apne authorized email se sign-in karein.</p>
+  <!-- 1. LOGIN -->
+  <div id="screenAuth" style="padding:24px; max-width:400px; margin: 50px auto;">
+    <h2 style="color:var(--primary); margin-bottom:12px;">🛡️ OmniVault</h2>
     <label>Email</label>
-    <input type="email" id="loginEmail" placeholder="your-email@gmail.com" />
+    <input type="email" id="authEmail" placeholder="your-email@gmail.com" />
     <label>Password</label>
-    <input type="password" id="loginPass" placeholder="••••••••" />
-    <button onclick="handleLogin()">Sign In</button>
+    <input type="password" id="authPass" placeholder="••••••••" />
+    <button class="btn btn-primary" style="width:100%;" onclick="doLogin()">Sign In</button>
   </div>
 
-  <!-- MASTER KEY -->
-  <div id="viewMasterKey" class="card hidden" style="max-width:480px; margin: 40px auto;">
-    <h1>🔐 Master Passphrase</h1>
-    <p>Apna Master Key daalein jo aapke files ko decrypt karega.</p>
+  <!-- 2. MASTER PASSPHRASE -->
+  <div id="screenMaster" class="hidden" style="padding:24px; max-width:400px; margin: 50px auto;">
+    <h2 style="color:var(--primary); margin-bottom:12px;">🔐 Unlock Vault</h2>
+    <p style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">Data zero-knowledge encrypted hai.</p>
     <label>Master Passphrase</label>
-    <input type="password" id="masterPassInput" placeholder="Master Key..." />
-    <div class="btn-row">
-      <button onclick="unlockVault()">Decrypt & Sync</button>
-      <button class="secondary" onclick="handleLogout()">Sign Out</button>
-    </div>
+    <input type="password" id="masterInput" placeholder="Master Key..." />
+    <button class="btn btn-primary" style="width:100%;" onclick="unlockVault()">Decrypt</button>
   </div>
 
-  <!-- VAULT MAIN -->
-  <div id="viewVault" class="hidden">
+  <!-- 3. MOBILE VAULT -->
+  <div id="screenVault" class="hidden">
     
-    <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
-      <div>
-        <span class="status-badge">● EXPLORER MATRIX E2EE ACTIVE</span>
+    <!-- Top Sticky Bar -->
+    <div class="top-bar">
+      <div class="brand-row">
+        <span class="brand-title">OmniVault</span>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="status-dot">● AES-256</span>
+          <span class="btn-action-tag" onclick="lockVault()">Lock</span>
+        </div>
       </div>
-      <div class="btn-row">
-        <button onclick="addPersonPrompt()">+ Add Person / Entity</button>
-        <button class="sm secondary" onclick="lockVault()">Lock</button>
-        <button class="sm danger" onclick="handleLogout()">Logout</button>
-      </div>
-    </div>
-
-    <!-- Search Bar -->
-    <div class="card" style="padding:10px 14px;">
-      <input type="text" id="searchQuery" placeholder="🔍 Search person, folder, bank, card, policy, CVV, pin, note..." oninput="renderVault()" style="margin-bottom:0;" />
-    </div>
-
-    <!-- DYNAMIC RECORD MODAL -->
-    <div id="itemModal" class="card hidden" style="border: 1px solid var(--primary);">
-      <h2 id="itemModalTitle">Add Record Details</h2>
-      
-      <label>1. Record / Bank / Service Title (e.g. HDFC Regalia CC, SBI Saving, LIC Jeevan Labh)</label>
-      <input type="text" id="itemTitleInput" placeholder="Record Title..." />
-
-      <label>2. Dynamic Excel Cells (Add Any Label & Value)</label>
-      <div id="dynamicFieldsBox"></div>
-      
-      <div class="btn-row" style="margin-bottom:14px;">
-        <button type="button" class="secondary sm" onclick="addDynamicFieldRow('', '')">+ Add Plain Cell</button>
-        <button type="button" class="secondary sm" onclick="addDynamicFieldRow('', '', true)">+ Add Secret/Masked Cell</button>
-      </div>
-
-      <label>Notes / Extra Info</label>
-      <textarea id="itemNotesInput" rows="2" placeholder="Renewal dates, Nominee, Phone numbers..."></textarea>
-
-      <div class="btn-row">
-        <button onclick="saveItem()">Save to Vault</button>
-        <button class="secondary" onclick="closeItemModal()">Cancel</button>
+      <div class="search-box">
+        <span>🔍</span>
+        <input type="text" id="searchBar" placeholder="Quick search cards, pins, banks..." oninput="renderApp()" />
       </div>
     </div>
 
-    <!-- EXPLORER LIST -->
-    <div id="vaultList"></div>
+    <!-- Person Horizontal Tabs -->
+    <div class="person-tabs" id="personTabs"></div>
+
+    <!-- Folder List Accordion -->
+    <div class="main-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin: 8px 0 12px;">
+        <span style="font-size:0.75rem; color:var(--muted); font-weight:bold; text-transform:uppercase;">Folders & Accounts</span>
+        <span class="btn-action-tag" onclick="promptNewFolder()">+ New Folder</span>
+      </div>
+      <div id="folderList"></div>
+    </div>
+
+    <!-- Floating Action Button -->
+    <button class="fab-btn" onclick="promptNewFolder()" title="Add Category/Folder">+</button>
+
+    <!-- Slide-Up Modal Bottom Sheet -->
+    <div id="modalSheet" class="modal-overlay hidden">
+      <div class="modal-sheet">
+        <div class="sheet-title" id="modalTitle">Record Details</div>
+
+        <label>Title (e.g. HDFC Millennia, SBI Saving, LIC Policy)</label>
+        <input type="text" id="recTitle" placeholder="Title..." />
+
+        <label>Dynamic Fields (Label & Value)</label>
+        <div id="dynamicFieldsBox"></div>
+
+        <div class="btn-row" style="margin-bottom:12px;">
+          <button type="button" class="btn btn-secondary" style="font-size:0.8rem;" onclick="addFieldRow('', '')">+ Add Text</button>
+          <button type="button" class="btn btn-secondary" style="font-size:0.8rem;" onclick="addFieldRow('', '', true)">+ Add Password</button>
+        </div>
+
+        <label>Notes</label>
+        <textarea id="recNotes" rows="2" placeholder="Renewal, nominee, branch..."></textarea>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="saveModalRecord()">Save</button>
+          <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        </div>
+      </div>
+    </div>
 
   </div>
-
-</div>
 
 </body>
 </html>
